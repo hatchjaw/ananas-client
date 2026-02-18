@@ -14,8 +14,9 @@
 #include <QNEthernet.h>
 #include <TimeLib.h>
 #include <Announcer.h>
-#include <program_components/ComponentManager.h>
-#include <program_components/EthernetManager.h>
+#include <ComponentManager.h>
+#include <EthernetManager.h>
+#include <PTPAuthority.h>
 #include <program_components/PTPManager.h>
 
 class PulsePerSecond : public AudioStream
@@ -44,24 +45,30 @@ private:
 };
 
 AudioControlSGTL5000 audioShield;
+#ifdef USB_AUDIO
 AudioInputUSB usbIn;
 AudioOutputI2S out;
 PulsePerSecond pps;
 AudioConnection c0(pps, 0, out, 0);
 AudioConnection c2(usbIn, 1, out, 1);
+#endif
 
-PTPManager ptpManager{ClockRole::Authority};
-ananas::Announcer<ananas::AuthorityAnnouncePacket> authorityAnnouncer{
+PTPAuthority ptpAuthority{
+    Constants::PTPEventSocketParams,
+    Constants::PTPGeneralSocketParams,
+    SystemUtils::LogLevel::Low
+};
+Announcer<ananas::AuthorityAnnouncePacket> authorityAnnouncer{
     ananas::Constants::AuthorityAnnounceSocketParams
 };
 std::vector<NetworkProcessor *> networkProcessors{
-    &ptpManager,
+    &ptpAuthority,
     &authorityAnnouncer
 };
-EthernetManager ethernetManager{"t41clocksubscriber", networkProcessors};
+EthernetManager ethernetManager{"t41clockauthority", networkProcessors};
 std::vector<ProgramComponent *> programComponents{
     &ethernetManager,
-    &ptpManager,
+    &ptpAuthority,
     &authorityAnnouncer
 };
 ComponentManager componentManager{programComponents};
@@ -85,7 +92,9 @@ void loop()
 {
     componentManager.run();
 
+#ifdef USB_AUDIO
     authorityAnnouncer.txPacket.numUnderruns = AudioInputUSB::getNumUnderruns();
     authorityAnnouncer.txPacket.numOverflows = AudioInputUSB::getNumOverflows();
     authorityAnnouncer.txPacket.usbFeedbackAccumulator = AudioInputUSB::getFeedbackAccumulator();
+#endif
 }

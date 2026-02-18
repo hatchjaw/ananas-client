@@ -1,6 +1,7 @@
 #ifndef PTPMANAGER_H
 #define PTPMANAGER_H
 
+#include <AnanasUtils.h>
 #include <ProgramComponent.h>
 #include <NetworkProcessor.h>
 #include <t41-ptp.h>
@@ -20,11 +21,11 @@ public:
 
     void connect() override;
 
-    void resetPTP();
+    void reset();
 
-    void onPTPControllerUpdated(std::function<void(double adjust)> callback);
+    void onControllerUpdated(std::function<void(double adjust)> callback);
 
-    void onPTPLock(std::function<void(bool isLocked, NanoTime compare, NanoTime now)> callback);
+    void onLockChanged(std::function<void(bool isLocked, NanoTime now)> callback);
 
     size_t printTo(Print &p) const override;
 
@@ -52,7 +53,7 @@ private:
     IntervalTimer ptpAnnounceTimer;
     int noPPSCount{0};
     std::function<void(double)> ptpControllerUpdatedCallback{nullptr};
-    std::function<void(bool, NanoTime, NanoTime)> ptpLockCallback{nullptr};
+    std::function<void(bool, NanoTime)> ptpLockCallback{nullptr};
     Pin24SwMuxControlRegister pin24SwMuxControlRegister;
     bool shouldSendAnnouncePacket{false};
     bool shouldSendSyncPacket{false};

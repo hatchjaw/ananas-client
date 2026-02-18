@@ -1,8 +1,9 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef ANANASUTILS_H
+#define ANANASUTILS_H
 
 #include <Arduino.h>
 #include <IPAddress.h>
+#include <NetworkUtils.h>
 
 #ifndef AUDIO_SAMPLE_RATE_EXACT
 #define AUDIO_SAMPLE_RATE_EXACT 48000
@@ -18,19 +19,10 @@
 
 #define CYCLES_TO_APPROX_PERCENT(cycles) (((float)((uint32_t)(cycles) * 6400u) * (float)(AUDIO_SAMPLE_RATE_EXACT / AUDIO_BLOCK_SAMPLES)) / (float)(F_CPU_ACTUAL))
 
+using namespace ananas::network;
+
 namespace ananas
 {
-    struct SocketParams
-    {
-        IPAddress ip;
-        uint16_t port{};
-    };
-
-    struct AnnounceSocketParams : SocketParams
-    {
-        uint intervalMs{};
-    };
-
     struct Constants
     {
         static constexpr size_t AudioBlockFrames{AUDIO_BLOCK_SAMPLES};
@@ -197,4 +189,4 @@ namespace ananas
     };
 }
 
-#endif //UTILS_H
+#endif //ANANASUTILS_H

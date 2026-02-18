@@ -1,14 +1,18 @@
 #include <AudioSystemManager.h>
 #include <AnanasClient.h>
 #include <ControlDataListener.h>
-#include <smalloc.h>
 #include <wfs.h>
-#include <program_components/ComponentManager.h>
-#include <program_components/EthernetManager.h>
-#include <program_components/PTPManager.h>
+#include <EthernetManager.h>
+#include <PTPSubscriber.h>
+#include <ComponentManager.h>
 #include "audio_processors/DistributedWFSProcessor.h"
 
+using namespace ananas::WFS;
+
 extern "C" uint8_t external_psram_size;
+
+volatile uint32_t syncReceiveCounter{0};
+volatile uint32_t followUpReceiveCounter{0};
 
 volatile bool ptpLock{false};
 AudioSystemConfig config{
@@ -17,28 +21,32 @@ AudioSystemConfig config{
     ClockRole::Subscriber
 };
 AudioSystemManager audioSystemManager{config};
-PTPManager ptpManager{ClockRole::Subscriber};
+PTPSubscriber ptpSubscriber{
+    Constants::PTPEventSocketParams,
+    Constants::PTPGeneralSocketParams,
+    SystemUtils::Low
+};
 ananas::AudioClient ananasClient{ananas::Constants::AudioSocketParams};
-ananas::WFS::ControlContext context;
-ananas::WFS::ControlDataListener controlDataListener{context};
+ControlContext context;
+ControlDataListener controlDataListener{context};
 wfs wfs;
 WFSModule wfsModule{ananasClient, wfs, context};
 std::vector<NetworkProcessor *> networkProcessors{
-    &ptpManager,
+    &ptpSubscriber,
     &ananasClient,
     &controlDataListener
 };
 EthernetManager ethernetManager{"t41wfsmodule", networkProcessors};
 std::vector<ProgramComponent *> programComponents{
     &ethernetManager,
-    &ptpManager,
+    &ptpSubscriber,
     &audioSystemManager,
     &ananasClient,
     &wfs,
     &wfsModule,
     &controlDataListener
 };
-ComponentManager componentManager{programComponents};
+ComponentManager componentManager{programComponents, SystemUtils::LogLevel::None};
 
 void setup()
 {
@@ -49,21 +57,19 @@ void setup()
 
     Serial.begin(2000000);
 
-    ptpManager.onPTPLock([](const bool isLocked, const NanoTime compare, const NanoTime now)
+    ptpSubscriber.onLockChanged([](const bool isLocked, const NanoTime now)
     {
         ananasClient.setIsPtpLocked(isLocked);
 
         if (isLocked && !audioSystemManager.isClockRunning()) {
             audioSystemManager.startClock();
-            Serial.print("Subscriber start audio clock ");
-            printTime(compare);
-            Serial.println();
+            Serial.println("Subscriber start audio clock.");
         } else if (audioSystemManager.isClockRunning()) {
             ananasClient.adjustBufferReadIndex(now);
         }
     });
 
-    ptpManager.onPTPControllerUpdated([](const double adjust)
+    ptpSubscriber.onControllerUpdated([](const double adjust)
     {
         audioSystemManager.adjustClock(adjust);
         ananasClient.setReportedSamplingRate(config.getExactSamplingRate());
@@ -72,7 +78,7 @@ void setup()
     audioSystemManager.onInvalidSamplingRate([]
     {
         Serial.printf("Resetting PTP and stopping audio.\n");
-        ptpManager.resetPTP();
+        ptpSubscriber.reset();
         audioSystemManager.stopClock();
     });
 
@@ -120,7 +126,7 @@ void setup()
         };
     }
 
-    AudioSystemManager::setAudioProcessor(&wfsModule);
+    audioSystemManager.setAudioProcessor(&wfsModule);
     componentManager.begin();
 }
 

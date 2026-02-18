@@ -33,28 +33,28 @@ namespace ananas
 
     void AudioClient::run()
     {
-        int size{socket.parsePacket()};
-        while (size > 0) {
-            nWrite++;
+        while (true) {
+            if (const auto size{socket.parsePacket()}; size > 0) {
+                nWrite++;
 
-            socket.read(rxPacket.rawData(), size);
-            packetBuffer.write(rxPacket);
+                socket.read(rxPacket.rawData(), size);
+                packetBuffer.write(rxPacket);
 
-            if (nWrite > Constants::ClientReportThresholdPackets) {
-                timespec now{};
-                qindesign::network::EthernetIEEE1588.readTimer(now);
-                const auto ns{now.tv_sec * Constants::NanosecondsPerSecond + now.tv_nsec};
+                if (nWrite > Constants::ClientReportThresholdPackets) {
+                    timespec now{};
+                    qindesign::network::EthernetIEEE1588.readTimer(now);
+                    const auto ns{now.tv_sec * Constants::NanosecondsPerSecond + now.tv_nsec};
 
-                const int64_t diff{ns - prevTime};
-                if (prevTime != 0) {
-                    totalTime += diff;
+                    const int64_t diff{ns - prevTime};
+                    if (prevTime != 0) {
+                        totalTime += diff;
+                    }
+                    prevTime = ns;
                 }
-                prevTime = ns;
-            }
 
-            announcer.txPacket.bufferFillPercent = announcer.txPacket.ptpLock ? packetBuffer.getFillPercent() : 50;
-            announcer.txPacket.percentCPU = getCurrentPercentCPU();
-            size = socket.parsePacket();
+                announcer.txPacket.bufferFillPercent = announcer.txPacket.ptpLock ? packetBuffer.getFillPercent() : 50;
+                announcer.txPacket.percentCPU = getCurrentPercentCPU();
+            } else break;
         }
 
         announcer.run();

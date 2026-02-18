@@ -4,6 +4,7 @@
 #include <NetworkProcessor.h>
 #include <ProgramComponent.h>
 
+namespace ananas::network {
 
 class EthernetManager final : public ProgramComponent
 {
@@ -26,6 +27,8 @@ private:
     IPAddress gateway{192, 168, 10, 1};
     const char *hostName;
 };
+
+}
 
 
 #endif //ETHERNETMANAGER_H

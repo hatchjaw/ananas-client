@@ -3,6 +3,8 @@
 
 #include <QNEthernetUDP.h>
 
+namespace ananas::network {
+
 class NetworkProcessor
 {
 public:
@@ -12,5 +14,7 @@ public:
 protected:
     qindesign::network::EthernetUDP socket{4};
 };
+
+}
 
 #endif //NETWORKPROCESSOR_H

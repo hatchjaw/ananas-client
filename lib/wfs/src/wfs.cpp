@@ -10656,7 +10656,7 @@ class mydsp : public dsp {
 		FAUSTFLOAT* output0 = outputs[0];
 		FAUSTFLOAT* output1 = outputs[1];
 		float fSlow0 = 1e+01f * float(fHslider0);
-		int iSlow1 = fSlow0 > 0.0f;
+		int iSlow1 = fSlow0 >= 0.0f;
 		float fSlow2 = mydsp_faustpower2_f(fSlow0);
 		float fSlow3 = 2.0f * float(fHslider1);
 		float fSlow4 = 7.5f * (float(fHslider2) + 1.0f);
@@ -10677,7 +10677,7 @@ class mydsp : public dsp {
 		int iSlow19 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow15))));
 		float fSlow20 = fSlow17 + (1.0f - fSlow14);
 		float fSlow21 = 1e+01f * float(fHslider4);
-		int iSlow22 = fSlow21 > 0.0f;
+		int iSlow22 = fSlow21 >= 0.0f;
 		float fSlow23 = mydsp_faustpower2_f(fSlow21);
 		float fSlow24 = 7.5f * (float(fHslider5) + 1.0f);
 		float fSlow25 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow24 - fSlow3)) + fSlow23);
@@ -10695,7 +10695,7 @@ class mydsp : public dsp {
 		int iSlow37 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow33))));
 		float fSlow38 = fSlow35 + (1.0f - fSlow32);
 		float fSlow39 = 1e+01f * float(fHslider6);
-		int iSlow40 = fSlow39 > 0.0f;
+		int iSlow40 = fSlow39 >= 0.0f;
 		float fSlow41 = mydsp_faustpower2_f(fSlow39);
 		float fSlow42 = 7.5f * (float(fHslider7) + 1.0f);
 		float fSlow43 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow42 - fSlow3)) + fSlow41);
@@ -10713,7 +10713,7 @@ class mydsp : public dsp {
 		int iSlow55 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow51))));
 		float fSlow56 = fSlow53 + (1.0f - fSlow50);
 		float fSlow57 = 1e+01f * float(fHslider8);
-		int iSlow58 = fSlow57 > 0.0f;
+		int iSlow58 = fSlow57 >= 0.0f;
 		float fSlow59 = mydsp_faustpower2_f(fSlow57);
 		float fSlow60 = 7.5f * (float(fHslider9) + 1.0f);
 		float fSlow61 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow60 - fSlow3)) + fSlow59);
@@ -10731,7 +10731,7 @@ class mydsp : public dsp {
 		int iSlow73 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow69))));
 		float fSlow74 = fSlow71 + (1.0f - fSlow68);
 		float fSlow75 = 1e+01f * float(fHslider10);
-		int iSlow76 = fSlow75 > 0.0f;
+		int iSlow76 = fSlow75 >= 0.0f;
 		float fSlow77 = mydsp_faustpower2_f(fSlow75);
 		float fSlow78 = 7.5f * (float(fHslider11) + 1.0f);
 		float fSlow79 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow78 - fSlow3)) + fSlow77);
@@ -10749,7 +10749,7 @@ class mydsp : public dsp {
 		int iSlow91 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow87))));
 		float fSlow92 = fSlow89 + (1.0f - fSlow86);
 		float fSlow93 = 1e+01f * float(fHslider12);
-		int iSlow94 = fSlow93 > 0.0f;
+		int iSlow94 = fSlow93 >= 0.0f;
 		float fSlow95 = mydsp_faustpower2_f(fSlow93);
 		float fSlow96 = 7.5f * (float(fHslider13) + 1.0f);
 		float fSlow97 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow96 - fSlow3)) + fSlow95);
@@ -10767,7 +10767,7 @@ class mydsp : public dsp {
 		int iSlow109 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow105))));
 		float fSlow110 = fSlow107 + (1.0f - fSlow104);
 		float fSlow111 = 1e+01f * float(fHslider14);
-		int iSlow112 = fSlow111 > 0.0f;
+		int iSlow112 = fSlow111 >= 0.0f;
 		float fSlow113 = mydsp_faustpower2_f(fSlow111);
 		float fSlow114 = 7.5f * (float(fHslider15) + 1.0f);
 		float fSlow115 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow114 - fSlow3)) + fSlow113);
@@ -10785,7 +10785,7 @@ class mydsp : public dsp {
 		int iSlow127 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow123))));
 		float fSlow128 = fSlow125 + (1.0f - fSlow122);
 		float fSlow129 = 1e+01f * float(fHslider16);
-		int iSlow130 = fSlow129 > 0.0f;
+		int iSlow130 = fSlow129 >= 0.0f;
 		float fSlow131 = mydsp_faustpower2_f(fSlow129);
 		float fSlow132 = 7.5f * (float(fHslider17) + 1.0f);
 		float fSlow133 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow132 - fSlow3)) + fSlow131);
@@ -10803,7 +10803,7 @@ class mydsp : public dsp {
 		int iSlow145 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow141))));
 		float fSlow146 = fSlow143 + (1.0f - fSlow140);
 		float fSlow147 = 1e+01f * float(fHslider18);
-		int iSlow148 = fSlow147 > 0.0f;
+		int iSlow148 = fSlow147 >= 0.0f;
 		float fSlow149 = mydsp_faustpower2_f(fSlow147);
 		float fSlow150 = 7.5f * (float(fHslider19) + 1.0f);
 		float fSlow151 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow150 - fSlow3)) + fSlow149);
@@ -10821,7 +10821,7 @@ class mydsp : public dsp {
 		int iSlow163 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow159))));
 		float fSlow164 = fSlow161 + (1.0f - fSlow158);
 		float fSlow165 = 1e+01f * float(fHslider20);
-		int iSlow166 = fSlow165 > 0.0f;
+		int iSlow166 = fSlow165 >= 0.0f;
 		float fSlow167 = mydsp_faustpower2_f(fSlow165);
 		float fSlow168 = 7.5f * (float(fHslider21) + 1.0f);
 		float fSlow169 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow168 - fSlow3)) + fSlow167);
@@ -10839,7 +10839,7 @@ class mydsp : public dsp {
 		int iSlow181 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow177))));
 		float fSlow182 = fSlow179 + (1.0f - fSlow176);
 		float fSlow183 = 1e+01f * float(fHslider22);
-		int iSlow184 = fSlow183 > 0.0f;
+		int iSlow184 = fSlow183 >= 0.0f;
 		float fSlow185 = mydsp_faustpower2_f(fSlow183);
 		float fSlow186 = 7.5f * (float(fHslider23) + 1.0f);
 		float fSlow187 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow186 - fSlow3)) + fSlow185);
@@ -10857,7 +10857,7 @@ class mydsp : public dsp {
 		int iSlow199 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow195))));
 		float fSlow200 = fSlow197 + (1.0f - fSlow194);
 		float fSlow201 = 1e+01f * float(fHslider24);
-		int iSlow202 = fSlow201 > 0.0f;
+		int iSlow202 = fSlow201 >= 0.0f;
 		float fSlow203 = mydsp_faustpower2_f(fSlow201);
 		float fSlow204 = 7.5f * (float(fHslider25) + 1.0f);
 		float fSlow205 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow204 - fSlow3)) + fSlow203);
@@ -10875,7 +10875,7 @@ class mydsp : public dsp {
 		int iSlow217 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow213))));
 		float fSlow218 = fSlow215 + (1.0f - fSlow212);
 		float fSlow219 = 1e+01f * float(fHslider26);
-		int iSlow220 = fSlow219 > 0.0f;
+		int iSlow220 = fSlow219 >= 0.0f;
 		float fSlow221 = mydsp_faustpower2_f(fSlow219);
 		float fSlow222 = 7.5f * (float(fHslider27) + 1.0f);
 		float fSlow223 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow222 - fSlow3)) + fSlow221);
@@ -10893,7 +10893,7 @@ class mydsp : public dsp {
 		int iSlow235 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow231))));
 		float fSlow236 = fSlow233 + (1.0f - fSlow230);
 		float fSlow237 = 1e+01f * float(fHslider28);
-		int iSlow238 = fSlow237 > 0.0f;
+		int iSlow238 = fSlow237 >= 0.0f;
 		float fSlow239 = mydsp_faustpower2_f(fSlow237);
 		float fSlow240 = 7.5f * (float(fHslider29) + 1.0f);
 		float fSlow241 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow240 - fSlow3)) + fSlow239);
@@ -10911,7 +10911,7 @@ class mydsp : public dsp {
 		int iSlow253 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow249))));
 		float fSlow254 = fSlow251 + (1.0f - fSlow248);
 		float fSlow255 = 1e+01f * float(fHslider30);
-		int iSlow256 = fSlow255 > 0.0f;
+		int iSlow256 = fSlow255 >= 0.0f;
 		float fSlow257 = mydsp_faustpower2_f(fSlow255);
 		float fSlow258 = 7.5f * (float(fHslider31) + 1.0f);
 		float fSlow259 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow258 - fSlow3)) + fSlow257);
@@ -10929,7 +10929,7 @@ class mydsp : public dsp {
 		int iSlow271 = int(std::min<float>(fSlow13, float(std::max<int>(0, iSlow267))));
 		float fSlow272 = fSlow269 + (1.0f - fSlow266);
 		float fSlow273 = 1e+01f * float(fHslider32);
-		int iSlow274 = fSlow273 > 0.0f;
+		int iSlow274 = fSlow273 >= 0.0f;
 		float fSlow275 = mydsp_faustpower2_f(fSlow273);
 		float fSlow276 = 7.5f * (float(fHslider33) + 1.0f);
 		float fSlow277 = std::sqrt(mydsp_faustpower2_f(fSlow5 * (fSlow276 - fSlow3)) + fSlow275);

@@ -36,7 +36,7 @@ public:
 
     volatile bool isClockRunning() const;
 
-    static void setAudioProcessor(AudioProcessor *processor);
+    void setAudioProcessor(AudioProcessor *processor);
 
     size_t printTo(Print &p) const override;
 
@@ -77,15 +77,20 @@ private:
         uint32_t getCurrentSai1ClkRootFreq() const;
     };
 
-    static void setupDMA();
+    void setupDMA();
+
+    void handleISR();
 
     static void isr();
 
     static void triggerAudioProcessing();
 
+    void handleSoftwareISR();
+
     static void softwareISR();
 
-private:
+    static inline AudioSystemManager *sInstance{nullptr};
+
     uint32_t cycPreReg{0},
             cycPostStop{0};
 
@@ -125,21 +130,21 @@ private:
 
     void (*updateAudioPtpOffsetCallback)(long){nullptr};
 
-    inline static AudioProcessor *sAudioProcessor{nullptr};
+    AudioProcessor *audioProcessor{nullptr};
 
-    inline static uint16_t sInterruptsPerSecond{0};
-    inline static int16_t sNumInterrupts{-1};
-    inline static long sFirstInterruptNS{0};
-    inline static volatile long sAudioPTPOffset{0};
-    inline static volatile bool sAudioPTPOffsetChanged{false};
-    inline static DMAChannel sDMA{false};
+    uint16_t interruptsPerSecond{0};
+    int16_t numInterrupts{-1};
+    long firstInterruptNS{0};
+    volatile long audioPTPOffset{0};
+    volatile bool audioPTPOffsetChanged{false};
+    DMAChannel dma{false};
 
     DMAMEM inline static int16_t sInputBufferData[ananas::Constants::MaxChannels][ananas::Constants::AudioBlockFrames]{};
     DMAMEM inline static int16_t sOutputBufferData[ananas::Constants::MaxChannels][ananas::Constants::AudioBlockFrames]{};
-    inline static int16_t *sInputBuffer[ananas::Constants::MaxChannels]{};
-    inline static int16_t *sOutputBuffer[ananas::Constants::MaxChannels]{};
+    int16_t *inputBuffer[ananas::Constants::MaxChannels]{};
+    int16_t *outputBuffer[ananas::Constants::MaxChannels]{};
 
-    inline static int16_t sAudioBuffer[ananas::Constants::AudioBlockFrames * ananas::Constants::NumOutputChannels]{};
+    int16_t audioBuffer[ananas::Constants::AudioBlockFrames * ananas::Constants::NumOutputChannels]{};
 
     DMAMEM __attribute__((aligned(32))) inline static uint32_t sI2sTxBuffer[ananas::Constants::AudioBlockFrames]{};
 };

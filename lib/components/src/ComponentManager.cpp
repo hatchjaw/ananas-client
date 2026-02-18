@@ -1,5 +1,7 @@
 #include "ComponentManager.h"
-#include <Print.h>
+
+#include <AnanasUtils.h>
+#include <EthernetManager.h>
 
 ComponentManager::ComponentManager(const std::vector<ProgramComponent *> &components, const SystemUtils::LogLevel logLevel)
     : programComponents(components),
@@ -36,12 +38,19 @@ void ComponentManager::run()
 size_t ComponentManager::printTo(Print &p) const
 {
     size_t total{0};
-    total += p.println() +
-            p.println("==============================================================================");
-    for (const auto *c: programComponents) {
-        total += p.print(*c);
+    total += p.println();
+    for (auto *c: programComponents) {
+        switch (logging) {
+            case SystemUtils::Medium:
+                total += p.print(*c);
+                break;
+            default: break;
+        }
     }
-    total += p.println("==============================================================================");
+
+    if (logging > SystemUtils::None) {
+        total += p.println("==============================================================================");
+    }
 
     return total;
 }

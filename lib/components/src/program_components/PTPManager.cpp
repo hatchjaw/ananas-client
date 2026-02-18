@@ -1,10 +1,13 @@
 #include "PTPManager.h"
+
+#include <AnanasUtils.h>
 #include <arm_math.h>
 #include <QNEthernet.h>
 #include <SystemUtils.h>
 #include <registers/SwMuxControlRegister.h>
 
-PTPManager::PTPManager(const ClockRole role) : ptp{role, DelayMode::E2E}
+PTPManager::PTPManager(const ClockRole role)
+    : ptp{role, DelayMode::E2E, LogLevel::Low}
 {
     sInstance = this;
 }
@@ -18,7 +21,7 @@ void PTPManager::beginImpl()
     pin24SwMuxControlRegister.begin();
     // Set up ENET PPS out on pin 24
     if (!pin24SwMuxControlRegister.setMuxMode(Pin24SwMuxControlRegister::MuxMode::ENET_1588_EVENT1_OUT) ||
-        !qindesign::network::EthernetIEEE1588.setChannelCompareValue(1, NS_PER_S) ||
+        !qindesign::network::EthernetIEEE1588.setChannelCompareValue(1, ananas::Constants::NanosecondsPerSecond) ||
         !qindesign::network::EthernetIEEE1588.setChannelMode(1, qindesign::network::EthernetIEEE1588Class::TimerChannelModes::kPulseHighOnCompare) ||
         !qindesign::network::EthernetIEEE1588.setChannelOutputPulseWidth(1, 25) ||
         !qindesign::network::EthernetIEEE1588.setChannelInterruptEnable(1, true)) {
@@ -26,8 +29,8 @@ void PTPManager::beginImpl()
         SystemUtils::reboot();
     }
 
-    attachInterruptVector(IRQ_ENET_TIMER, interrupt1588Timer); //Configure Interrupt Handler
-    NVIC_ENABLE_IRQ(IRQ_ENET_TIMER); //Enable Interrupt Handling
+    attachInterruptVector(IRQ_ENET_TIMER, interrupt1588Timer);
+    NVIC_ENABLE_IRQ(IRQ_ENET_TIMER);
     NVIC_SET_PRIORITY(IRQ_ENET_TIMER, SystemUtils::IrqPriority::Priority64);
 
     switch (ptp.getClockRole()) {
@@ -46,16 +49,16 @@ void PTPManager::beginImpl()
 
 void PTPManager::run()
 {
-    if (ptp.getClockRole() == ClockRole::Authority) {
-        if (shouldSendAnnouncePacket) {
-            shouldSendAnnouncePacket = false;
-            ptp.announceMessage();
-        }
-        if (shouldSendSyncPacket) {
-            shouldSendSyncPacket = false;
-            ptp.syncMessage();
-        }
-    }
+    // if (ptp.getClockRole() == ClockRole::Authority) {
+    //     if (shouldSendAnnouncePacket) {
+    //         shouldSendAnnouncePacket = false;
+    //         ptp.announceMessage();
+    //     }
+    //     if (shouldSendSyncPacket) {
+    //         shouldSendSyncPacket = false;
+    //         // ptp.syncMessage();
+    //     }
+    // }
 
     ptp.update();
 
@@ -81,17 +84,17 @@ void PTPManager::connect()
     });
 }
 
-void PTPManager::resetPTP()
+void PTPManager::reset()
 {
     ptp.reset();
 }
 
-void PTPManager::onPTPControllerUpdated(std::function<void(double adjust)> callback)
+void PTPManager::onControllerUpdated(std::function<void(double adjust)> callback)
 {
     ptpControllerUpdatedCallback = std::move(callback);
 }
 
-void PTPManager::onPTPLock(std::function<void(bool isLocked, NanoTime compare, NanoTime now)> callback)
+void PTPManager::onLockChanged(std::function<void(bool isLocked, NanoTime now)> callback)
 {
     ptpLockCallback = std::move(callback);
 }
@@ -136,7 +139,7 @@ void PTPManager::handle1588Interrupt()
 
     switch (ptp.getClockRole()) {
         case ClockRole::Authority:
-            t = (static_cast<NanoTime>(t) + NS_PER_S - 60) % NS_PER_S;
+            t = (static_cast<NanoTime>(t) + ananas::Constants::NanosecondsPerSecond - 60) % ananas::Constants::NanosecondsPerSecond;
 
             qindesign::network::EthernetIEEE1588.readTimer(ts);
 
@@ -156,7 +159,7 @@ void PTPManager::handle1588Interrupt()
             ppsNS = 0;
             break;
         case ClockRole::Subscriber:
-            t %= NS_PER_S;
+            t = (static_cast<NanoTime>(t) + ananas::Constants::NanosecondsPerSecond - 60) % ananas::Constants::NanosecondsPerSecond;
 
             qindesign::network::EthernetIEEE1588.readTimer(ts);
         // The channel compare value may be close to, but not exactly, 1e9.
@@ -176,11 +179,10 @@ void PTPManager::handle1588Interrupt()
 
             interruptNS = t;
 
-        // Start audio the first a PTP lock (offset < 100 ns) is reported.
+        // Start audio the first time  a PTP lock (offset < 100 ns) is reported.
             if (ptpLockCallback != nullptr) {
-                const NanoTime enetCompareTime{interruptS * NS_PER_S + interruptNS},
-                        now{ts.tv_sec * NS_PER_S + ts.tv_nsec};
-                ptpLockCallback(ptp.getLockCount() > 0, enetCompareTime, now);
+                const NanoTime now{ts.tv_sec * NS_PER_S + ts.tv_nsec};
+                ptpLockCallback(ptp.getLockCount() > 0, now);
             }
             break;
         default:
@@ -194,7 +196,8 @@ void PTPManager::handle1588Interrupt()
 void PTPManager::handleSyncInterrupt()
 {
     if (noPPSCount > 5) {
-        shouldSendSyncPacket = true;
+        // shouldSendSyncPacket = true;
+        ptp.syncMessage();
     } else {
         noPPSCount++;
     }
@@ -202,5 +205,6 @@ void PTPManager::handleSyncInterrupt()
 
 void PTPManager::handleAnnounceInterrupt()
 {
-    shouldSendAnnouncePacket = true;
+    ptp.announceMessage();
+    // shouldSendAnnouncePacket = true;
 }

@@ -1,10 +1,14 @@
 #include <AudioSystemManager.h>
 #include <AnanasClient.h>
-#include <program_components/ComponentManager.h>
-#include <program_components/EthernetManager.h>
+#include <ComponentManager.h>
+#include <EthernetManager.h>
+#include <PTPSubscriber.h>
 #include <program_components/PTPManager.h>
 
 extern "C" uint8_t external_psram_size;
+
+volatile uint32_t syncReceiveCounter{0};
+volatile uint32_t followUpReceiveCounter{0};
 
 AudioSystemConfig config{
     ananas::Constants::AudioBlockFrames,
@@ -12,16 +16,20 @@ AudioSystemConfig config{
     ClockRole::Subscriber
 };
 AudioSystemManager audioSystemManager{config};
-PTPManager ptpManager{ClockRole::Subscriber};
+PTPSubscriber ptpSubscriber{
+    Constants::PTPEventSocketParams,
+    Constants::PTPGeneralSocketParams,
+    SystemUtils::None
+};
 ananas::AudioClient ananasClient{ananas::Constants::AudioSocketParams};
 std::vector<NetworkProcessor *> networkProcessors{
-    &ptpManager,
+    &ptpSubscriber,
     &ananasClient
 };
 EthernetManager ethernetManager{"t41clocksubscriber", networkProcessors};
 std::vector<ProgramComponent *> programComponents{
     &ethernetManager,
-    &ptpManager,
+    &ptpSubscriber,
     &audioSystemManager,
     &ananasClient
 };
@@ -36,21 +44,19 @@ void setup()
 
     Serial.begin(2000000);
 
-    ptpManager.onPTPLock([](const bool isLocked, const NanoTime compare, const NanoTime now)
+    ptpSubscriber.onLockChanged([](const bool isLocked, const NanoTime now)
     {
         ananasClient.setIsPtpLocked(isLocked);
 
         if (isLocked && !audioSystemManager.isClockRunning()) {
             audioSystemManager.startClock();
-            Serial.print("Subscriber start audio clock ");
-            printTime(compare);
-            Serial.println();
+            Serial.println("Subscriber start audio clock.");
         } else if (audioSystemManager.isClockRunning()) {
             ananasClient.adjustBufferReadIndex(now);
         }
     });
 
-    ptpManager.onPTPControllerUpdated([](const double adjust)
+    ptpSubscriber.onControllerUpdated([](const double adjust)
     {
         audioSystemManager.adjustClock(adjust);
         ananasClient.setReportedSamplingRate(config.getExactSamplingRate());
@@ -59,7 +65,7 @@ void setup()
     audioSystemManager.onInvalidSamplingRate([]
     {
         Serial.printf("Resetting PTP and stopping audio.\n");
-        ptpManager.resetPTP();
+        ptpSubscriber.reset();
         audioSystemManager.stopClock();
     });
 
@@ -69,12 +75,9 @@ void setup()
         // TODO: update PLL4 NUM more frequently?
     });
 
-    AudioSystemManager::setAudioProcessor(&ananasClient);
+    audioSystemManager.setAudioProcessor(&ananasClient);
     componentManager.begin();
 }
-
-elapsedMillis elapsed;
-static constexpr int reportInterval{1000};
 
 void loop()
 {

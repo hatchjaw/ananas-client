@@ -4,7 +4,7 @@
 #include "NetworkProcessor.h"
 #include "ProgramComponent.h"
 
-namespace ananas
+namespace ananas::network
 {
     template<typename PacketType>
     class Announcer final : public ProgramComponent,
@@ -52,6 +52,6 @@ namespace ananas
         elapsedMillis elapsed;
         IPAddress ip;
     };
-} // ananas
+}
 
 #endif //ANNOUNCER_H
