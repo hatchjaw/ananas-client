@@ -42,7 +42,7 @@ protected:
 
     void beginImpl() override
     {
-    };
+    }
 
 private:
     AudioProcessor &client;

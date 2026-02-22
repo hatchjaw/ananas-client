@@ -1,7 +1,6 @@
 #ifndef PTPSUBSCRIBER_H
 #define PTPSUBSCRIBER_H
 
-#include <lwip_t41.h>
 #include <map>
 #include <NetworkProcessor.h>
 #include <ProgramComponent.h>
@@ -64,12 +63,12 @@ namespace ananas::network
                 return t1 - prevT1;
             }
 
-            [[nodiscard]] NanoTime getT2mT1() const
+            [[nodiscard]] NanoTime getSyncToFollowUpDiff() const
             {
                 return t2 - t1;
             }
 
-            [[nodiscard]] NanoTime getT4mT3() const
+            [[nodiscard]] NanoTime getDelayReqToRespDiff() const
             {
                 return t4 - t3;
             }
@@ -81,7 +80,7 @@ namespace ananas::network
 
             [[nodiscard]] NanoTime getOffset() const
             {
-                return t2 - t1 - getDelay() + Constants::HardwareOffsetNs;
+                return getSyncToFollowUpDiff() - getDelay() + Constants::HardwareOffsetNs;
             }
 
             [[nodiscard]] double getDrift() const
@@ -109,11 +108,11 @@ namespace ananas::network
         void handle1588Interrupt() override;
 
         constexpr static uint8_t LEDPin{13};
-        qindesign::network::EthernetUDP generalSocket{16};
-        IntervalTimer readTimer;
+        qindesign::network::EthernetUDP generalSocket{4};
         uint8_t rxBuffer[MTU];
         PTPV2Packet rxSyncPacket, txDelayReqPacket;
         std::map<uint16_t, TimeExchange> pendingExchanges;
+        TimeExchange lastExchange{};
         uint16_t exchangeId{0}, syncSequenceId{0}, delayReqSequenceId{0};
         double kP{1}, kI{.5};
         double drift{0}, adjust{0};

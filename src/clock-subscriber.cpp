@@ -3,7 +3,6 @@
 #include <ComponentManager.h>
 #include <EthernetManager.h>
 #include <PTPSubscriber.h>
-#include <program_components/PTPManager.h>
 
 extern "C" uint8_t external_psram_size;
 
@@ -12,14 +11,13 @@ volatile uint32_t followUpReceiveCounter{0};
 
 AudioSystemConfig config{
     ananas::Constants::AudioBlockFrames,
-    ananas::Constants::AudioSamplingRate,
-    ClockRole::Subscriber
+    ananas::Constants::AudioSamplingRate
 };
 AudioSystemManager audioSystemManager{config};
 PTPSubscriber ptpSubscriber{
     Constants::PTPEventSocketParams,
     Constants::PTPGeneralSocketParams,
-    SystemUtils::None
+    SystemUtils::LogLevel::None
 };
 ananas::AudioClient ananasClient{ananas::Constants::AudioSocketParams};
 std::vector<NetworkProcessor *> networkProcessors{
@@ -33,7 +31,7 @@ std::vector<ProgramComponent *> programComponents{
     &audioSystemManager,
     &ananasClient
 };
-ComponentManager componentManager{programComponents};
+ComponentManager componentManager{programComponents, SystemUtils::LogLevel::Medium};
 
 void setup()
 {
@@ -69,10 +67,9 @@ void setup()
         audioSystemManager.stopClock();
     });
 
-    audioSystemManager.onAudioPtpOffsetChanged([](const long offset)
+    audioSystemManager.onAudioPtpOffsetChanged([](const int32_t offset)
     {
         ananasClient.setAudioPtpOffsetNs(offset);
-        // TODO: update PLL4 NUM more frequently?
     });
 
     audioSystemManager.setAudioProcessor(&ananasClient);

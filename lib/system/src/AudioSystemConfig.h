@@ -2,7 +2,6 @@
 #define TEENSY_AUDIOSYNC_CONFIG_H
 
 #include <Arduino.h>
-#include <ptp/ptp-base.h>
 
 struct ClockConstants
 {
@@ -32,9 +31,10 @@ struct ClockConstants
     static constexpr uint32_t AudioWordSize{1 << 8};
     /**
      * Ratio of the frequency of the crystal oscillator to the SAI1 word size;
-     * used in various calculations. @see AudioSystemManager::calculateDividers.
+     * used in various calculations. @see AudioSystemManager::calculateCoarse
+     * and AudioSystemManager::calculateFine.
      */
-    static constexpr double CyclesPerWord{(double) OscHz / AudioWordSize};
+    static constexpr double CyclesPerWord{static_cast<double>(OscHz) / AudioWordSize};
     /**
      * Minimum valid value for CCM_ANALOG_PLL_AUDIO.DIV_SELECT (D_S).
      *
@@ -99,10 +99,9 @@ struct ClockConstants
 
 struct AudioSystemConfig final : Printable
 {
-    AudioSystemConfig(const uint16_t bufferSize, const uint32_t samplingRate, const ClockRole clockRole, const float volume = .5f)
+    AudioSystemConfig(const uint16_t bufferSize, const uint32_t samplingRate, const float volume = .5f)
         : kSamplingRate(samplingRate),
           kBufferSize(bufferSize),
-          kClockRole(clockRole),
           volume(volume),
           samplingRateExact(samplingRate)
     {
@@ -110,21 +109,19 @@ struct AudioSystemConfig final : Printable
 
     size_t printTo(Print &p) const override
     {
-        return p.printf("%s - Frames/Fs: %" PRIu16 "/%" PRIu32 " (%.16f)",
-                        kClockRole == ClockRole::Authority ? "Clock Authority" : "Clock Subscriber",
+        return p.printf("Clock subscriber - Frames/Fs: %" PRIu16 "/%" PRIu32 " (%.16f)",
                         kBufferSize, kSamplingRate, samplingRateExact);
     }
 
     void setExactSamplingRate(const double proportionalAdjustment)
     {
-        samplingRateExact = proportionalAdjustment * (double) kSamplingRate;
+        samplingRateExact = proportionalAdjustment * static_cast<double>(kSamplingRate);
     }
 
-    double getExactSamplingRate() const { return samplingRateExact; }
+    [[nodiscard]] double getExactSamplingRate() const { return samplingRateExact; }
 
     const uint32_t kSamplingRate;
     const uint16_t kBufferSize;
-    const ClockRole kClockRole;
     float volume;
 
 private:

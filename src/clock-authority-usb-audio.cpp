@@ -17,7 +17,6 @@
 #include <ComponentManager.h>
 #include <EthernetManager.h>
 #include <PTPAuthority.h>
-#include <program_components/PTPManager.h>
 
 class PulsePerSecond : public AudioStream
 {
@@ -71,7 +70,7 @@ std::vector<ProgramComponent *> programComponents{
     &ptpAuthority,
     &authorityAnnouncer
 };
-ComponentManager componentManager{programComponents};
+ComponentManager componentManager{programComponents, SystemUtils::LogLevel::Medium};
 
 void setup()
 {

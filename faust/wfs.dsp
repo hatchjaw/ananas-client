@@ -9,14 +9,8 @@ nModules = N_SPEAKERS / SPEAKERS_PER_MODULE;
 // of distance
 distanceSim(distance) = *(dGain) : fi.lowpass(2, fc)
 with{
-    // Use inverse square law; I_2/I_1 = (d_1/d_2)^2
-    // Assume sensible listening distance of 2 m from array.
-    i1 = 1.; // Intensity 1...
-    d1 = 2.; // ...at distance 2 m
-    d2 = d1 + distance;
-    i2 = i1 * (d1/d2)^2; //
-    dGain = i2;
-    // dGain = (MAX_Y_DIST - distance*.5)/(MAX_Y_DIST);
+    // Inverse square law: A(d) = 1 / d, using a minimum distance of 1 m.
+    dGain = 1 / max(distance^(.5), 1);
 
     fc = dGain*15000 + 5000;
 };
@@ -25,35 +19,42 @@ with{
 // i.e. give each source a distance simulation and a delay
 // relative to each speaker.
 speakerArray(x, y, s, id) = _ <:
-    par(i, SPEAKERS_PER_MODULE, focusedSource(i),virtualSource(i) : select2(y > 0))
+    par(i, SPEAKERS_PER_MODULE, _,distanceSim(hypotenuse(i)) : select2(y > 0) :
+        (focusedSourceDelay(i),virtualSourceDelay(i) : select2(y > 0)),_ : de.fdelay(MAX_HYPOTENUSE * samplesPerMeter))
 with{
-    focusedSource(i) = 0;
-    virtualSource(i) = distanceSim(hypotenuse(i)) : de.fdelay(MAX_DELAY, smallDelay(i));
+    arrayWidth = (N_SPEAKERS - 1) * s;
+    MAX_ARRAY_WIDTH = (N_SPEAKERS - 1) * MAX_SPEAKER_DIST;
+    MAX_HYPOTENUSE = MIN_Y_DIST^2 + MAX_ARRAY_WIDTH^2 : sqrt;
+
+    virtualSourceDelay(k) = smallDelay(k);
+    focusedSourceDelay(k) = MAX_HYPOTENUSE - hypotenuse(k) * samplesPerMeter;
+
     // Number of samples it takes sound to travel one meter.
     samplesPerMeter = ma.SR/CELERITY;
-
-    // Number of samples it takes sound to traverse the speaker array.
-    MAX_DELAY = (N_SPEAKERS-1)*s*samplesPerMeter;
 
     // y (front-to-back) is always just y, the longitudinal
     // distance of the source from the array.
     // Get x between the source and specific speaker in the array, i.e. the
     // cathetus on the x-axis of the right triangle described by y and the
     // speaker position.
-    // E.g. for 16 speakers (8 modules), with a spacing, s, of .25 m,
+    // E.g. for 16 speakers (8 modules), with a spacing, s, of .25 m; NB the
+    // centre of the array lies between speaker 1 of module 3 and speaker 0 of
+    // module 4, so it's necessary to subtract .5 from the multiplier to s.
     //      array width, w = (16-1)*.25 = 3.75,
+    //             range x = -3.75/2 <= x <= 3.75/2 = -1.875 <= x <= 1.875
     //        let module m = 2 (third module in array)
     //       let speaker j = 0 (first speaker in module)
-    //               let x = 2.25 (m, relative to left edge of array)
-    //                  cx = x - s*(m*2 + j)
-    //                     = 2.25 - .25*(2*2 + 0)
-    //                     = 1.25
+    //               let x = 0 (m, relative to centre of array)
+    //                  cx = x + s*((m - 4 + .5) * 2 + j - .5)
+    //                     = 0 + .25*(-1.5*2 + 0 - .5)
+    //                     = .25 * -3.5
+    //                     = -0.875
     //
-    //               let m = 7, j = 1, x = 2.25
-    //                  cx = 2.25 - .25*(7*2 + 1) = -1.5
+    //               let m = 7, j = 1, x = 0
+    //                  cx = 0 + .25*(3.5*2 + 1 - .5) = 1.875
     //
-    //               let m = 0, j = 0, x = 2.25
-    //                  cx = 2.25 - .25*(0*2 + 0) = 2.25
+    //               let m = 0, j = 0, x = 0
+    //                  cx = 0 + .25*(-3.5*2 + 0 - .5) = -1.875
     cathetusX(k) = x - (s*(k + id*2));
     hypotenuse(j) = cathetusX(j)^2 + y^2 : sqrt;
     smallDelay(j) = (hypotenuse(j) - y)*samplesPerMeter;
@@ -72,21 +73,14 @@ with{
     // Set speaker spacing (m)
     spacing = globalGroup(hslider("spacing[unit:m]", .2, .05, MAX_SPEAKER_DIST, .01));
 
-    maxX = spacing*(N_SPEAKERS-1);
-    // posGroup(x) = vgroup("Source Positions", x);
+    maxX = spacing*(N_SPEAKERS-1)/2;
+
     // Use normalised input co-ordinate space; scale to dimensions.
-
-    // X position lies on the width of the speaker array
-    // Until a way can be found to smooth position updates before calling
-    // wfs.setParamValue([pos], [value]), use si.smoo.
-    // x(p) = hslider("v: %p/x", 0, 0, 1, 0.001) : si.smoo : *(spacing*(N_SPEAKERS-1));
-    // x(p) = posGroup(hslider("v: %p/x", 0, 0, 1, 0.001) : *(spacing*(N_SPEAKERS-1)));
     x(p) = hslider("%p/x", 0, -1, 1, 0.001) : +(1) : /(2) : *(maxX);
-
-    // Y position is from zero (on the array) to a quasi-arbitrary maximum.
-    // y(p) = hslider("v: %p/y", 0, 0, 1, 0.001) : si.smoo : *(MAX_Y_DIST);
-    // y(p) = posGroup(hslider("v: %p/y", 0, 0, 1, 0.001) : *(MAX_Y_DIST));
-    y(p) = hslider("%p/y", 0, -1, 1, 0.001) : *(MAX_Y_DIST);
+    y(p) = yPos <: *(MAX_Y_DIST),*(-MIN_Y_DIST) : select2(yPos < 0)
+    with {
+        yPos = hslider("%p/y", 0, -1, 1, 0.001);
+    };
 };
 
 // Distribute input channels (i.e. sources) across the sources array.

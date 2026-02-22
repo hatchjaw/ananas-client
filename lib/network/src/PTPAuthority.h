@@ -47,11 +47,12 @@ namespace ananas::network
         void handleDelayReqMessage(timespec &t4);
 
         qindesign::network::EthernetUDP generalSocket{4};
+        bool sendAnnounce{false}, sendSync{false};
         uint ppsCount{0};
         IntervalTimer syncTimer;
         timespec t1{0, 0};
         elapsedMicros elapsedSinceSync{};
-        static constexpr uint32_t followUpThresholdUs{1000};
+        static constexpr uint32_t followUpThresholdUs{100};
         IntervalTimer announceTimer;
         PTPV2AnnouncePacket txAnnouncePacket;
         PTPV2Packet txSyncPacket, txFollowUpPacket, rxDelayReqPacket;

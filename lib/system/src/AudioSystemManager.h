@@ -40,9 +40,9 @@ public:
 
     size_t printTo(Print &p) const override;
 
-    void onInvalidSamplingRate(void (*callback)());
+    void onInvalidSamplingRate(const std::function<void()> &callback);
 
-    void onAudioPtpOffsetChanged(void (*callback)(long));
+    void onAudioPtpOffsetChanged(const std::function<void(int32_t)> &callback);
 
 private:
     struct ClockDividers final : Printable
@@ -52,8 +52,8 @@ private:
         uint32_t pll4Denom{1};
         uint8_t sai1Pre{1};
         uint8_t sai1Post{1};
-        constexpr static MiscellaneousRegister2::AudioPostDiv kAudioPostDiv{MiscellaneousRegister2::AudioPostDiv::DivideBy1};
-        constexpr static AnalogAudioPllControlRegister::PostDivSelect kPll4PostDiv{AnalogAudioPllControlRegister::PostDivSelect::DivideBy1};
+        constexpr static auto kAudioPostDiv{MiscellaneousRegister2::AudioPostDiv::DivideBy1};
+        constexpr static auto kPll4PostDiv{AnalogAudioPllControlRegister::PostDivSelect::DivideBy1};
 
         size_t printTo(Print &p) const override;
 
@@ -126,17 +126,17 @@ private:
 
     SGTL5000 audioShield;
 
-    void (*invalidSamplingRateCallback)(){nullptr};
-
-    void (*updateAudioPtpOffsetCallback)(long){nullptr};
+    std::function<void()> invalidSamplingRateCallback{nullptr};
+    std::function<void(int32_t)> updateAudioPtpOffsetCallback{nullptr};
 
     AudioProcessor *audioProcessor{nullptr};
 
     uint16_t interruptsPerSecond{0};
     int16_t numInterrupts{-1};
-    long firstInterruptNS{0};
-    volatile long audioPTPOffset{0};
-    volatile bool audioPTPOffsetChanged{false};
+    int32_t firstInterruptNS{0};
+    int32_t audioPTPOffset{0};
+    double totalAdjust{0}, meanAdjust{0};
+    uint32_t numAdjustments{0};
     DMAChannel dma{false};
 
     DMAMEM inline static int16_t sInputBufferData[ananas::Constants::MaxChannels][ananas::Constants::AudioBlockFrames]{};

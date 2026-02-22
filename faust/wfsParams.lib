@@ -1,10 +1,13 @@
 // Speed of sound (c, m/s)
 CELERITY = 343;
 
-// max Y distance, in meters, that a virtual source can be from the speaker array
-MAX_Y_DIST = 10;
+// max Y distance (m) that a virtual source can be behind the speaker array
+MAX_Y_DIST = 10 <: attach(hbargraph("maxY", 0, 50));
 
-// Number of speakers in the speaker array.
+// max Y position (m) that a focused source can be in front of the array
+MIN_Y_DIST = -3 <: attach(hbargraph("minY", -10, 0));
+
+// Number of speakers in the array.
 N_SPEAKERS = 16;
 
 // Each module (Teensy) controls two speakers.
@@ -13,5 +16,6 @@ SPEAKERS_PER_MODULE = 2;
 // Number of sound sources (i.e. mono channels)
 N_SOURCES = 16;
 
+// Max speaker spacing; determines maximum delay line lengths.
 // This looks to be the maximum for now, based on 16 speakers.
 MAX_SPEAKER_DIST = .3;

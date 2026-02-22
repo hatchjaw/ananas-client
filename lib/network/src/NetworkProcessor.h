@@ -1,7 +1,7 @@
 #ifndef NETWORKPROCESSOR_H
 #define NETWORKPROCESSOR_H
 
-#include <QNEthernetUDP.h>
+#include <QNEthernet.h>
 
 namespace ananas::network {
 

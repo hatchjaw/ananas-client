@@ -14,7 +14,6 @@ namespace ananas::network
         generalSocket.beginMulticast(ip, generalPort);
 
         announceTimer.begin(announceInterrupt, 1'000'000);
-        delay(10);
         syncTimer.begin(syncInterrupt, 1'000'000);
 
         Serial.println("PTP Started");
@@ -75,6 +74,16 @@ namespace ananas::network
 
     void PTPAuthority::run()
     {
+        if (sendAnnounce) {
+            sendAnnounce = false;
+            sendAnnounceMessage();
+        }
+
+        if (sendSync) {
+            sendSync = false;
+            sendSyncMessage();
+        }
+
         // Send a follow-up packet if enough time has elapsed, and if t1 has
         // actually been set, i.e. t1 isn't zero.
         if (elapsedSinceSync > followUpThresholdUs) {
@@ -101,7 +110,7 @@ namespace ananas::network
 
     size_t PTPAuthority::printTo(Print &p) const
     {
-        return 0;
+        return p.println("Clock Authority");
     }
 
     void PTPAuthority::syncInterrupt()
@@ -123,7 +132,7 @@ namespace ananas::network
     void PTPAuthority::handleSyncInterrupt()
     {
         if (ppsCount > 5) {
-            sendSyncMessage();
+            sendSync = true;
         } else {
             ++ppsCount;
         }
@@ -131,7 +140,7 @@ namespace ananas::network
 
     void PTPAuthority::handleAnnounceInterrupt()
     {
-        sendAnnounceMessage();
+        sendAnnounce = true;
     }
 
     void PTPAuthority::handle1588Interrupt()
@@ -190,7 +199,7 @@ namespace ananas::network
         }
 
         // Reset t1.
-        t1 = {0,0};
+        t1 = {0, 0};
     }
 
     void PTPAuthority::sendDelayResponseMessage(const uint8_t *sourcePortID, const timespec &t4, const uint16_t seqID)

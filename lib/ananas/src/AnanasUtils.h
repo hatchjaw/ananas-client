@@ -38,28 +38,28 @@ namespace ananas
             49152
         };
 
+        inline static const SocketParams WFSControlSocketParams{
+            {224, 4, 224, 5},
+            49162
+        };
+
         inline static const SocketParams RebootSocketParams{
             {224, 4, 224, 5},
-            49153
-        };
-
-        inline static const SocketParams WFSControlSocketParams{
-            {224, 4, 224, 6},
-            49154
-        };
-
-        inline static const AnnounceSocketParams ClientAnnounceSocketParams{
-            {
-                {224, 4, 224, 10},
-                49160
-            },
-            500
+            49163
         };
 
         inline static const AnnounceSocketParams AuthorityAnnounceSocketParams{
             {
-                {224, 4, 224, 11},
-                49161
+                {224, 4, 224, 6},
+                49172
+            },
+            500
+        };
+
+        inline static const AnnounceSocketParams ClientAnnounceSocketParams{
+            {
+                {224, 4, 224, 6},
+                49173
             },
             500
         };
@@ -97,6 +97,17 @@ namespace ananas
         }
 
         static float clamp(float value, const float min, const float max)
+        {
+            if (value < min) {
+                value = min;
+            } else if (value > max) {
+                value = max;
+            }
+
+            return value;
+        }
+
+        static int clamp(int value, const int min, const int max)
         {
             if (value < min) {
                 value = min;

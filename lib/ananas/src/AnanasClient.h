@@ -16,6 +16,7 @@ namespace ananas
         explicit ListenerSocket(const SocketParams &p);
 
         void connect() override;
+
     private:
         IPAddress ip;
         uint16_t port;
@@ -45,7 +46,7 @@ namespace ananas
 
         void setIsPtpLocked(bool ptpLock);
 
-        void setAudioPtpOffsetNs(long offset);
+        void setAudioPtpOffsetNs(int32_t offset);
 
         [[nodiscard]] size_t getNumInputs() const override { return 0; }
 

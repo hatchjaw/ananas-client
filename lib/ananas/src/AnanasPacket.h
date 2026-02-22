@@ -2,9 +2,8 @@
 #define ANANASPACKET_H
 
 #include "AnanasUtils.h"
-#include <lwip_t41.h>
 #include <SystemUtils.h>
-#include <t41-ptp.h>
+#include <qnethernet/driver_select.h>
 
 namespace ananas
 {

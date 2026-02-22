@@ -17,14 +17,13 @@ volatile uint32_t followUpReceiveCounter{0};
 volatile bool ptpLock{false};
 AudioSystemConfig config{
     ananas::Constants::AudioBlockFrames,
-    ananas::Constants::AudioSamplingRate,
-    ClockRole::Subscriber
+    ananas::Constants::AudioSamplingRate
 };
 AudioSystemManager audioSystemManager{config};
 PTPSubscriber ptpSubscriber{
     Constants::PTPEventSocketParams,
     Constants::PTPGeneralSocketParams,
-    SystemUtils::Low
+    SystemUtils::LogLevel::None
 };
 ananas::AudioClient ananasClient{ananas::Constants::AudioSocketParams};
 ControlContext context;
@@ -82,7 +81,7 @@ void setup()
         audioSystemManager.stopClock();
     });
 
-    audioSystemManager.onAudioPtpOffsetChanged([](const long offset)
+    audioSystemManager.onAudioPtpOffsetChanged([](const int32_t offset)
     {
         ananasClient.setAudioPtpOffsetNs(offset);
     });

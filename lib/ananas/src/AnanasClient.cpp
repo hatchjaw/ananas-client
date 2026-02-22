@@ -100,7 +100,7 @@ namespace ananas
         announcer.txPacket.ptpLock = ptpLock;
     }
 
-    void AudioClient::setAudioPtpOffsetNs(const long offset)
+    void AudioClient::setAudioPtpOffsetNs(const int32_t offset)
     {
         announcer.txPacket.audioPtpOffsetNs = offset;
         announcer.txPacket.presentationOffsetFrame = (announcer.txPacket.presentationOffsetNs + offset) / static_cast<int64_t>(1e9 / sampleRate);

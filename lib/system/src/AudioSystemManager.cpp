@@ -1,6 +1,5 @@
 #include "AudioSystemManager.h"
 #include <QNEthernet.h>
-#include <t41-ptp.h>
 #include <AnanasUtils.h>
 #include <SystemUtils.h>
 
@@ -171,10 +170,6 @@ void AudioSystemManager::beginImpl()
 
 void AudioSystemManager::run()
 {
-    if (audioPTPOffsetChanged && updateAudioPtpOffsetCallback != nullptr) {
-        updateAudioPtpOffsetCallback(audioPTPOffset);
-        audioPTPOffsetChanged = false;
-    }
 }
 
 void AudioSystemManager::startClock()
@@ -246,21 +241,28 @@ size_t AudioSystemManager::printTo(Print &p) const
            p.println();
 }
 
-void AudioSystemManager::onInvalidSamplingRate(void (*callback)())
+void AudioSystemManager::onInvalidSamplingRate(const std::function<void()> &callback)
 {
     invalidSamplingRateCallback = callback;
 }
 
-void AudioSystemManager::onAudioPtpOffsetChanged(void (*callback)(long))
+void AudioSystemManager::onAudioPtpOffsetChanged(const std::function<void(int32_t)> &callback)
 {
     updateAudioPtpOffsetCallback = callback;
 }
 
 void AudioSystemManager::adjustClock(const double adjust)
 {
-    const double proportionalAdjustment{
-        1. + (adjust + audioPTPOffset) * ClockConstants::Nanosecond
-    };
+    auto combinedAdjust{adjust + audioPTPOffset};
+    totalAdjust += combinedAdjust;
+    meanAdjust = totalAdjust / ++numAdjustments;
+    if (isClockRunning() && abs(combinedAdjust) > 5000) {
+        Serial.printf("COMBINED NSPS ADJUSTMENT OUT OF RANGE; USING MEAN = %f ns.\n", meanAdjust);
+        Serial.printf("adjust = %f ns, audioPTPOffset = %" PRId32 " ns, combined = %f ns\n", adjust, audioPTPOffset, combinedAdjust);
+        combinedAdjust = meanAdjust;
+    }
+
+    const double proportionalAdjustment{1. + combinedAdjust * ClockConstants::Nanosecond};
 
     config.setExactSamplingRate(proportionalAdjustment);
     if (!clockDividers.calculateFine(config.getExactSamplingRate())) {
@@ -309,7 +311,7 @@ void AudioSystemManager::handleISR()
         qindesign::network::EthernetIEEE1588.readTimer(ts);
         const auto ns{ts.tv_sec * ClockConstants::NanosecondsPerSecond + ts.tv_nsec};
         Serial.print("First interrupt time: ");
-        printTime(ns);
+        Utils::printTime(ns);
         Serial.println();
     }
 
@@ -328,7 +330,10 @@ void AudioSystemManager::handleISR()
             ts.tv_nsec += ananas::Constants::NanosecondsPerSecond;
         }
         audioPTPOffset = ts.tv_nsec - firstInterruptNS;
-        audioPTPOffsetChanged = true;
+
+        if (updateAudioPtpOffsetCallback != nullptr) {
+            updateAudioPtpOffsetCallback(audioPTPOffset);
+        }
     }
 
     int16_t *destination, *source;

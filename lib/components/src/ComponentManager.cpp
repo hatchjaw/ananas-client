@@ -39,7 +39,7 @@ size_t ComponentManager::printTo(Print &p) const
 {
     size_t total{0};
     total += p.println();
-    for (auto *c: programComponents) {
+    for (const auto *c: programComponents) {
         switch (logging) {
             case SystemUtils::Medium:
                 total += p.print(*c);
