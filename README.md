@@ -69,7 +69,7 @@ compile .dsp files to classes compatible with the audiosync/ananas
 With the Faust compiler installed, navigate to the [faust](faust) directory and run
 
 ```shell
-./faust2ananas [program_name].dsp
+./faust2ananas -lib [program_name].dsp
 ```
 
 This will place `[program_name].h` and `[program_name].cpp` in
