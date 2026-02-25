@@ -120,6 +120,7 @@ namespace ananas::network
         uint lockCount{0};
         std::function<void(double)> controllerUpdatedCallback{nullptr};
         std::function<void(bool, NanoTime)> lockChangedCallback{nullptr};
+        int syncReceiveCounter{0}, followUpReceiveCounter{0};
     };
 }
 

@@ -3,9 +3,6 @@
 #include <lwip/prot/igmp.h>
 #include <sys/unistd.h>
 
-extern volatile uint32_t syncReceiveCounter;
-extern volatile uint32_t followUpReceiveCounter;
-
 using namespace qindesign::network;
 
 namespace ananas::network
@@ -40,10 +37,8 @@ namespace ananas::network
 
     void PTPSubscriber::run()
     {
-        for (auto i{0}; i < 3; ++i) {
-            pollEventSocket();
-            pollGeneralSocket();
-        }
+        pollEventSocket();
+        pollGeneralSocket();
 
         digitalWrite(LEDPin, isLocked() ? HIGH : LOW);
     }
@@ -71,7 +66,8 @@ namespace ananas::network
     {
         const auto lastOffset{lastExchange.getOffset()};
         return p.printf("PTP t1: %" PRId64 ", t2: %" PRId64 ", t3 %" PRId64 ", t4 %" PRId64 "\n"
-                        "  Mode: %s, Drift: %f, Offset: %" PRId64 ", Delay %" PRId64 ", Adjust: %f\n",
+                        "  Mode: %s, Drift: %f, Offset: %" PRId64 ", Delay %" PRId64 ", Adjust: %f\n"
+                        "  Sync rx: %" PRId32 ", follow-up rx: %" PRId32 " (follow-up loss: %f %%)\n",
                         lastExchange.t1,
                         lastExchange.t2,
                         lastExchange.t3,
@@ -80,7 +76,10 @@ namespace ananas::network
                         lastExchange.getDrift(),
                         lastOffset,
                         lastExchange.getDelay(),
-                        adjust
+                        adjust,
+                        syncReceiveCounter,
+                        followUpReceiveCounter,
+                        100.f - 100.f * static_cast<float>(followUpReceiveCounter) / static_cast<float>(syncReceiveCounter)
         );
     }
 
@@ -93,7 +92,6 @@ namespace ananas::network
                 if (socket.readWithTimestamp(reinterpret_cast<uint8_t *>(&rxSyncPacket), size, &t2) > 0) {
                     handleSyncMessage(t2);
                     syncReceiveCounter++;
-                    Serial.printf("Sync received (%" PRIu32 ")\n", syncReceiveCounter);
                 }
             } else break;
         }
@@ -110,9 +108,6 @@ namespace ananas::network
                         case Constants::FollowUpMessage.type:
                             handleFollowUpMessage();
                             followUpReceiveCounter++;
-                            Serial.printf("Follow-up received (%" PRIu32 ", %" PRId32 ")\n", followUpReceiveCounter,
-                                          static_cast<int32_t>(followUpReceiveCounter) -
-                                          static_cast<int32_t>(syncReceiveCounter));
                             break;
                         case Constants::DelayResponseMessage.type:
                             handleDelayRespMessage();
@@ -303,10 +298,6 @@ namespace ananas::network
                 EthernetIEEE1588.adjustFreq(adjust);
                 nspsAccu = 0;
                 lockCount = 0;
-
-                // if (controllerUpdatedCallback != nullptr) {
-                //     controllerUpdatedCallback(adjust);
-                // }
             } else if (coarseMode) {
                 EthernetIEEE1588.offsetTimer(-offset);
                 nspsAccu = 0;
@@ -321,10 +312,6 @@ namespace ananas::network
                 EthernetIEEE1588.adjustFreq(adjust);
                 pendingExchanges[exchangeId + 1].prevT2 += offsetCorrection;
                 lockCount++;
-
-                // if (controllerUpdatedCallback != nullptr) {
-                    // controllerUpdatedCallback(adjust);
-                // }
             }
 
             // Call the controller-updated callback. Perfect opportunity to do
@@ -376,7 +363,7 @@ namespace ananas::network
 
         if (lockChangedCallback != nullptr) {
             lockChangedCallback(
-                lockCount > 0,
+                lockCount >= 3,
                 currentInterruptTime.tv_sec * Constants::NanosecondsPerSecond + currentInterruptTime.tv_nsec
             );
         }

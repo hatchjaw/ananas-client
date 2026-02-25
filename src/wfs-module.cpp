@@ -11,9 +11,6 @@ using namespace ananas::WFS;
 
 extern "C" uint8_t external_psram_size;
 
-volatile uint32_t syncReceiveCounter{0};
-volatile uint32_t followUpReceiveCounter{0};
-
 volatile bool ptpLock{false};
 AudioSystemConfig config{
     ananas::Constants::AudioBlockFrames,

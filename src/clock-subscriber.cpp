@@ -6,9 +6,6 @@
 
 extern "C" uint8_t external_psram_size;
 
-volatile uint32_t syncReceiveCounter{0};
-volatile uint32_t followUpReceiveCounter{0};
-
 AudioSystemConfig config{
     ananas::Constants::AudioBlockFrames,
     ananas::Constants::AudioSamplingRate
@@ -31,7 +28,7 @@ std::vector<ProgramComponent *> programComponents{
     &audioSystemManager,
     &ananasClient
 };
-ComponentManager componentManager{programComponents, SystemUtils::LogLevel::Medium};
+ComponentManager componentManager{programComponents, SystemUtils::LogLevel::None};
 
 void setup()
 {

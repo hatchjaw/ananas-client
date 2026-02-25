@@ -254,18 +254,27 @@ void AudioSystemManager::onAudioPtpOffsetChanged(const std::function<void(int32_
 void AudioSystemManager::adjustClock(const double adjust)
 {
     auto combinedAdjust{adjust + audioPTPOffset};
-    totalAdjust += combinedAdjust;
-    meanAdjust = totalAdjust / ++numAdjustments;
-    if (isClockRunning() && abs(combinedAdjust) > 5000) {
-        Serial.printf("COMBINED NSPS ADJUSTMENT OUT OF RANGE; USING MEAN = %f ns.\n", meanAdjust);
-        Serial.printf("adjust = %f ns, audioPTPOffset = %" PRId32 " ns, combined = %f ns\n", adjust, audioPTPOffset, combinedAdjust);
-        combinedAdjust = meanAdjust;
+    double samplingRateToUse;
+
+    // If the clock is running, only adjust the sampling rate if adjustments are
+    // sane, otherwise use the mean until things settle down.
+    if (isClockRunning()) {
+        if (abs(combinedAdjust) < 5000) {
+            const double proportionalAdjustment{1. + combinedAdjust * ClockConstants::Nanosecond};
+            config.setExactSamplingRate(proportionalAdjustment);
+            samplingRateToUse = config.getExactSamplingRate();
+        } else {
+            Serial.printf("Using mean sampling rate: %f Hz\n", config.getMeanSamplingRate());
+            samplingRateToUse = config.getMeanSamplingRate();
+        }
+    } else {
+        // If not (e.g. on startup), permit drastic changes.
+        const double proportionalAdjustment{1. + combinedAdjust * ClockConstants::Nanosecond};
+        config.setExactSamplingRate(proportionalAdjustment);
+        samplingRateToUse = config.getExactSamplingRate();
     }
 
-    const double proportionalAdjustment{1. + combinedAdjust * ClockConstants::Nanosecond};
-
-    config.setExactSamplingRate(proportionalAdjustment);
-    if (!clockDividers.calculateFine(config.getExactSamplingRate())) {
+    if (!clockDividers.calculateFine(samplingRateToUse)) {
         if (invalidSamplingRateCallback != nullptr) {
             invalidSamplingRateCallback();
         }

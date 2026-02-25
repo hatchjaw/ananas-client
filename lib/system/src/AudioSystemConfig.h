@@ -109,23 +109,29 @@ struct AudioSystemConfig final : Printable
 
     size_t printTo(Print &p) const override
     {
-        return p.printf("Clock subscriber - Frames/Fs: %" PRIu16 "/%" PRIu32 " (%.16f)",
-                        kBufferSize, kSamplingRate, samplingRateExact);
+        return p.printf("Clock subscriber - Frames/Fs: %" PRIu16 "/%" PRIu32 " (%.16f)\n"
+                        "                   (Mean sampling rate: %.16f)",
+                        kBufferSize, kSamplingRate, samplingRateExact, meanSamplingRateExact);
     }
 
     void setExactSamplingRate(const double proportionalAdjustment)
     {
         samplingRateExact = proportionalAdjustment * static_cast<double>(kSamplingRate);
+        totalSamplingRateExact += samplingRateExact;
+        meanSamplingRateExact = totalSamplingRateExact / ++numSamplingRateUpdates;
     }
 
     [[nodiscard]] double getExactSamplingRate() const { return samplingRateExact; }
+
+    [[nodiscard]] double getMeanSamplingRate() const { return meanSamplingRateExact; }
 
     const uint32_t kSamplingRate;
     const uint16_t kBufferSize;
     float volume;
 
 private:
-    double samplingRateExact;
+    double samplingRateExact, meanSamplingRateExact, totalSamplingRateExact;
+    int numSamplingRateUpdates{0};
 };
 
 #endif //TEENSY_AUDIOSYNC_CONFIG_H
