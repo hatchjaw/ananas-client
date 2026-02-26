@@ -14,7 +14,7 @@
 #endif
 
 #ifndef NUM_SOURCES
-#define NUM_SOURCES 16
+#define NUM_SOURCES 8
 #endif
 
 #define CYCLES_TO_APPROX_PERCENT(cycles) (((float)((uint32_t)(cycles) * 6400u) * (float)(AUDIO_SAMPLE_RATE_EXACT / AUDIO_BLOCK_SAMPLES)) / (float)(F_CPU_ACTUAL))
