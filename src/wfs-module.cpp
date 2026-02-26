@@ -42,7 +42,7 @@ std::vector<ProgramComponent *> programComponents{
     &wfsModule,
     &controlDataListener
 };
-ComponentManager componentManager{programComponents, SystemUtils::LogLevel::None};
+ComponentManager componentManager{programComponents, SystemUtils::LogLevel::Medium};
 
 void setup()
 {

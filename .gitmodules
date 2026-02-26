@@ -1,0 +1,6 @@
+[submodule "tools/faust"]
+	path = tools/faust
+	url = https://github.com/grame-cncm/faust.git
+[submodule "tools/rygel"]
+	path = tools/rygel
+	url = https://codeberg.org/Koromix/rygel

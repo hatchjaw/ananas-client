@@ -14,7 +14,7 @@ N_SPEAKERS = 16;
 SPEAKERS_PER_MODULE = 2;
 
 // Number of sound sources (i.e. mono channels)
-N_SOURCES = 16;
+N_SOURCES = 8;
 
 // Max speaker spacing; determines maximum delay line lengths.
 // This looks to be the maximum for now, based on 16 speakers.
