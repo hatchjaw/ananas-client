@@ -17,24 +17,40 @@ with the Teensy Audio Library.
   development boards with 
   [ethernet](https://www.pjrc.com/store/ethernet_kit.html) and 
   [audio](http://pjrc.com/store/teensy3_audio.html) add-ons
+- [A network switch with PTP support](#a-network-switch-with-ptp-support)
+
+To install software dependencies, execute the script at
+[scripts/installs-tools.sh](./scripts/install-tools.sh)
+
 - [PlatformIO CLI](#platformio)
 - [tytools](#tytools)
 - [Faust](#faust)
-- [A network switch with PTP support](#a-network-switch-with-ptp-support)
+
 - [Other dependencies](#other-dependencies)
+
+### A network switch with PTP support
+
+[This helpful guide](https://github.com/jclark/rpi-cm4-ptp-guide/blob/main/switches.md)
+describes a few. The MikroTik
+[CRS326-24G-2S series](https://mikrotik.com/product/crs326_24g_2s_in) is
+probably the most cost-effective, but it is only capable as acting as a boundary
+clock, i.e. not as a transparent clock; if daisy-chaining switches, some timing
+discrepancy will be introduced, anecdotally on the order of a few hundred
+nanoseconds per jump. 
+
+Additionally, the CRS326's PTP algorithm does not cope well when traffic on the
+switch is high, e.g. when a lot of bandwidth is used for transmitting audio 
+data; specifically, although it sends sync messages without issue, follow-up 
+messages are not transmitted on all PTP-enabled ports 100% of the time --- 
+anecdotally, when transmitting eight channels (16-bit @ 48 kHz), follow-up loss
+is on the order of 1-2 %; for sixteen channels it's upwards of 10 %, which is 
+sporadically catastrophic for synchronisation.
 
 ### PlatformIO
 
-As per the
-[PlatformIO documentation](https://docs.platformio.org/en/latest/core/installation/methods/installer-script.html#id1),
-run the following command to get and install PlatformIO
-
-```shell
-curl -fsSL -o get-platformio.py https://raw.githubusercontent.com/platformio/platformio-core-installer/master/get-platformio.py
-python3 get-platformio.py
-```
-
-You should now be able to run
+[scripts/installs-tools.sh](./scripts/install-tools.sh) installs PlatformIO as 
+per the [official documentation](https://docs.platformio.org/en/latest/core/installation/methods/installer-script.html#id1). After running the script you 
+should now be able to execute `pio`
 
 ```
 pio --version
@@ -44,27 +60,19 @@ yielding a result like `PlatformIO Core, version 6.1.18`.
 
 ### tytools
 
-The scripts in the `scripts` directory are useful for building PlatformIO
+The other scripts in the `scripts` directory are useful for building PlatformIO
 environments and uploading to multiple Teensies in a single command. They are
 thus dependent upon the availability of the `pio` CLI and Niels Martigène's
-very useful `tytools` utilities, specifically `tycmd`. Follow the [build
-instructions](https://koromix.dev/tytools#hacking-tytools); after cloning the
-monorepo, run
-
-```shell
-./boostrap.sh
-./felix -pFast tycmd
-```
-
-then copy the tycmd executable to somewhere in your `$PATH`, e.g.
-`~/.local/bin`.
+very useful `tytools` utilities, specifically `tycmd`. Once again
+[scripts/installs-tools.sh](./scripts/install-tools.sh) follows the [build
+instructions](https://koromix.dev/tytools#hacking-tytools); after building `tycmd`, it is copied to `~/.local/bin`.
 
 ### Faust
 
-A local install of the Faust compiler and associated ecosystem is required to
-compile .dsp files to classes compatible with the audiosync/ananas
-`AudioProcessor` API. Follow Faust installation instructions
-[here](https://github.com/grame-cncm/faust/wiki).
+A local installation of the Faust compiler and associated ecosystem is required
+to compile .dsp files to classes compatible with the audiosync/ananas
+`AudioProcessor` API. [scripts/installs-tools.sh](./scripts/install-tools.sh)
+essentially follows Faust's basic [build instructions](https://github.com/grame-cncm/faust/wiki/BuildingSimple).
 
 With the Faust compiler installed, navigate to the [faust](faust) directory and run
 
@@ -75,16 +83,6 @@ With the Faust compiler installed, navigate to the [faust](faust) directory and 
 This will place `[program_name].h` and `[program_name].cpp` in
 `lib/[program_name]/src/`
 
-### A network switch with PTP support
-
-[This helpful guide](https://github.com/jclark/rpi-cm4-ptp-guide/blob/main/switches.md)
-describes a few. The Mikrotik
-[CRS326-24G-2S series](https://mikrotik.com/product/crs326_24g_2s_in) is
-probably the most cost-effective, but it is only capable as acting as a boundary
-clock, i.e. not as a transparent clock; if daisy-chaining switches, some timing
-discrepancy will be introduced, anecdotally on the order of a few hundred
-nanoseconds per jump.
-
 ### Other dependencies
 
 The following are handled automatically by PlatformIO via `lib_deps` in
@@ -94,11 +92,12 @@ The following are handled automatically by PlatformIO via `lib_deps` in
   [framework-arduinoteensy](framework-arduinoteensy); this includes
   modifications to permit the `clock-authority-usb-audio` firmware to run as a
   48 kHz USB audio device.
-- A forked version of [t41-ptp](https://github.com/IMS-AS-LUH/t41-ptp),
-  exposing a callback function when the PTP controller is updated.
-- [HedgeHawk/QNEthernet](https://github.com/HedgeHawk/QNEthernet), which
+- A fork of [QNEthernet](https://github.com/ssilverman/qnethernet), based in
+  turn on the fork
+  [HedgeHawk/QNEthernet](https://github.com/HedgeHawk/QNEthernet), which
   implements various hardware registers associated with the IEEE 1588 ENET
-  timer.
+  timer, and takes advantage of more recent QNEthernet developments, such as
+  improved IGMP behaviour.
 - For the `wfs-module` environment, a fork of
   [CNMAT/OSC](https://github.com/CNMAT/OSC), implementing class member callback
   functions on message/bundle receipt.
