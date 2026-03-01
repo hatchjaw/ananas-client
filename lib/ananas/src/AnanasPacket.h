@@ -37,7 +37,9 @@ namespace ananas
         int32_t audioPtpOffsetNs;
         uint8_t bufferFillPercent;
         bool ptpLock;
-        uint16_t moduleID;
+        int16_t moduleID{-1};
+        float minYCoordinateM{0.f};
+        float maxYCoordinateM{0.f};
     };
 
     struct AuthorityAnnouncePacket : Packet

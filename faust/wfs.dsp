@@ -68,8 +68,10 @@ sourcesArray(s) = par(i, ba.count(s), ba.take(i + 1, s) :
     :> par(i, SPEAKERS_PER_MODULE, _)
 with{
     globalGroup(x) = vgroup("Global settings", x);
-    // Set which speakers to control.
-    moduleID = globalGroup(hslider("moduleID", 0, 0, nModules - 1, 1));
+    // Set which speakers to control. A module ID of -1 indicates that this
+    // module's ID hasn't in fact been set at all (or has been superceded by
+    // another module taking its place).
+    moduleID = globalGroup(hslider("moduleID", -1, -1, nModules - 1, 1));
     // Set speaker spacing (m)
     spacing = globalGroup(hslider("spacing[unit:m]", .2, .05, MAX_SPEAKER_DIST, .01));
 

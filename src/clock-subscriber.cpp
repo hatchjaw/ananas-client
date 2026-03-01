@@ -28,7 +28,7 @@ std::vector<ProgramComponent *> programComponents{
     &audioSystemManager,
     &ananasClient
 };
-ComponentManager componentManager{programComponents, SystemUtils::LogLevel::None};
+ComponentManager componentManager{programComponents, SystemUtils::LogLevel::Medium};
 
 void setup()
 {

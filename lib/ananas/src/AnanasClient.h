@@ -54,7 +54,9 @@ namespace ananas
 
         void setPercentCPU(float percentage);
 
-        void setModuleID(uint16_t moduleID);
+        void setModuleID(int16_t moduleID);
+
+        void setYRange(float minY, float maxY);
 
     protected:
         void processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t numFrames) override;

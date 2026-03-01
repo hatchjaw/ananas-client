@@ -96,18 +96,8 @@ namespace ananas
             return static_cast<uint32_t>(numCycles * Constants::NanosecondsPerCpuCycle);
         }
 
-        static float clamp(float value, const float min, const float max)
-        {
-            if (value < min) {
-                value = min;
-            } else if (value > max) {
-                value = max;
-            }
-
-            return value;
-        }
-
-        static int clamp(int value, const int min, const int max)
+        template <typename T>
+        static T clamp(T value, const T min, const T max)
         {
             if (value < min) {
                 value = min;

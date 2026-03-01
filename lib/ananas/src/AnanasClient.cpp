@@ -111,9 +111,15 @@ namespace ananas
         announcer.txPacket.percentCPU = percentage;
     }
 
-    void AudioClient::setModuleID(const uint16_t moduleID)
+    void AudioClient::setModuleID(const int16_t moduleID)
     {
         announcer.txPacket.moduleID = moduleID;
+    }
+
+    void AudioClient::setYRange(const float minY, const float maxY)
+    {
+        announcer.txPacket.minYCoordinateM = minY;
+        announcer.txPacket.maxYCoordinateM = maxY;
     }
 
     void AudioClient::processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t numFrames)

@@ -237,7 +237,7 @@ size_t AudioSystemManager::printTo(Print &p) const
 {
     return p.println(config) +
            p.print(clockDividers) +
-           p.printf("Audio-PTP offset: %" PRId32 " ns", audioPTPOffset) +
+           p.printf("  Audio-PTP offset: %" PRId32 " ns (Accumulated: %" PRId32 " ns)", audioPTPOffset, accumulatedOffset) +
            p.println();
 }
 
@@ -253,28 +253,17 @@ void AudioSystemManager::onAudioPtpOffsetChanged(const std::function<void(int32_
 
 void AudioSystemManager::adjustClock(const double adjust)
 {
-    auto combinedAdjust{adjust + audioPTPOffset};
-    double samplingRateToUse;
+    // Apply PI controller to audio-PTP offset.
+    accumulatedOffset += audioPTPOffset;
+    // Mitigate "wind-up" by clamping the accumulated offset.
+    accumulatedOffset = ananas::Utils::clamp(accumulatedOffset, -MaxAccumulatedOffset, MaxAccumulatedOffset);
+    const double offsetP{static_cast<double>(audioPTPOffset) * KP};
+    const double offsetI{static_cast<double>(accumulatedOffset) * KI};
+    config.setExactSamplingRate(
+        1. + (adjust + offsetP + offsetI) * ClockConstants::Nanosecond
+    );
 
-    // If the clock is running, only adjust the sampling rate if adjustments are
-    // sane, otherwise use the mean until things settle down.
-    if (isClockRunning()) {
-        if (abs(combinedAdjust) < 5000) {
-            const double proportionalAdjustment{1. + combinedAdjust * ClockConstants::Nanosecond};
-            config.setExactSamplingRate(proportionalAdjustment);
-            samplingRateToUse = config.getExactSamplingRate();
-        } else {
-            Serial.printf("Using mean sampling rate: %f Hz\n", config.getMeanSamplingRate());
-            samplingRateToUse = config.getMeanSamplingRate();
-        }
-    } else {
-        // If not (e.g. on startup), permit drastic changes.
-        const double proportionalAdjustment{1. + combinedAdjust * ClockConstants::Nanosecond};
-        config.setExactSamplingRate(proportionalAdjustment);
-        samplingRateToUse = config.getExactSamplingRate();
-    }
-
-    if (!clockDividers.calculateFine(samplingRateToUse)) {
+    if (!clockDividers.calculateFine(config.getExactSamplingRate())) {
         if (invalidSamplingRateCallback != nullptr) {
             invalidSamplingRateCallback();
         }
@@ -479,7 +468,7 @@ bool AudioSystemManager::ClockDividers::calculateFine(const double targetSamplin
 
 size_t AudioSystemManager::ClockDividers::printTo(Print &p) const
 {
-    return p.printf("PLL4 DIV: %" PRIu8
+    return p.printf("  PLL4 DIV: %" PRIu8
                     ", NUM: %" PRId32
                     ", DENOM: %" PRIu32
                     "; SAI1 PRED: %" PRIu8

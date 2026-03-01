@@ -11,7 +11,6 @@ using namespace ananas::WFS;
 
 extern "C" uint8_t external_psram_size;
 
-volatile bool ptpLock{false};
 AudioSystemConfig config{
     ananas::Constants::AudioBlockFrames,
     ananas::Constants::AudioSamplingRate
@@ -106,13 +105,14 @@ void setup()
         );
     }
     for (auto &sp: context.sourcePositions) {
-        // // If smoothing in Faust with si.smoo:
-        // sp.second.onSet = [sp](const float value)
-        // {
-        //     // Serial.printf("Updating %s: %f\n", sp.first.c_str(), value);
-        //     wfs.setParamValue(sp.first, value);
-        // };
-
+#ifdef USE_SI_SMOO
+        // If smoothing in Faust with si.smoo:
+        sp.second.onSet = [sp](const float value)
+        {
+            // Serial.printf("Updating %s: %f\n", sp.first.c_str(), value);
+            wfs.setParamValue(sp.first, value);
+        };
+#else
         // If smoothing outside of Faust:
         sp.second.onChange = [sp](float value)
         {
@@ -121,6 +121,9 @@ void setup()
             wfs.setParamValue(sp.first, value);
         };
     }
+#endif
+
+    ananasClient.setYRange(wfs.getParamValue("minY"), wfs.getParamValue("maxY"));
 
     audioSystemManager.setAudioProcessor(&wfsModule);
     componentManager.begin();
@@ -131,5 +134,5 @@ void loop()
     componentManager.run();
 
     ananasClient.setPercentCPU(wfsModule.getCurrentPercentCPU());
-    ananasClient.setModuleID(static_cast<uint16_t>(wfs.getParamValue("moduleID")));
+    ananasClient.setModuleID(static_cast<int16_t>(wfs.getParamValue("moduleID")));
 }
