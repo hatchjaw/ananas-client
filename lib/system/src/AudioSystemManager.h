@@ -135,10 +135,11 @@ private:
     int16_t numInterrupts{-1};
     int32_t firstInterruptNS{0};
     int32_t audioPTPOffset{0};
-    double totalAdjust{0}, meanAdjust{0};
-    uint32_t numAdjustments{0};
-    DMAChannel dma{false};
+    int32_t accumulatedOffset{0};
+    static constexpr int32_t MaxAccumulatedOffset{500'000};
+    static constexpr double KP{.1}, KI{.01};
 
+    DMAChannel dma{false};
     DMAMEM inline static int16_t sInputBufferData[ananas::Constants::MaxChannels][ananas::Constants::AudioBlockFrames]{};
     DMAMEM inline static int16_t sOutputBufferData[ananas::Constants::MaxChannels][ananas::Constants::AudioBlockFrames]{};
     int16_t *inputBuffer[ananas::Constants::MaxChannels]{};
