@@ -11,6 +11,7 @@ using namespace ananas::WFS;
 
 extern "C" uint8_t external_psram_size;
 
+SystemUtils::LogLevel logLevel{SystemUtils::LogLevel::None};
 AudioSystemConfig config{
     ananas::Constants::AudioBlockFrames,
     ananas::Constants::AudioSamplingRate
@@ -19,9 +20,12 @@ AudioSystemManager audioSystemManager{config};
 PTPSubscriber ptpSubscriber{
     Constants::PTPEventSocketParams,
     Constants::PTPGeneralSocketParams,
-    SystemUtils::LogLevel::None
+    logLevel
 };
-ananas::AudioClient ananasClient{ananas::Constants::AudioSocketParams};
+ananas::AudioClient ananasClient{
+    ananas::Constants::AudioSocketParams,
+    logLevel
+};
 ControlContext context;
 ControlDataListener controlDataListener{context};
 wfs wfs;
@@ -41,7 +45,10 @@ std::vector<ProgramComponent *> programComponents{
     &wfsModule,
     &controlDataListener
 };
-ComponentManager componentManager{programComponents, SystemUtils::LogLevel::Medium};
+ComponentManager componentManager{
+    programComponents,
+    logLevel
+};
 
 void setup()
 {
@@ -50,7 +57,7 @@ void setup()
     }
 #endif
 
-    Serial.begin(2000000);
+    Serial.begin(0);
 
     ptpSubscriber.onLockChanged([](const bool isLocked, const NanoTime now)
     {
@@ -58,7 +65,7 @@ void setup()
 
         if (isLocked && !audioSystemManager.isClockRunning()) {
             audioSystemManager.startClock();
-            Serial.println("Subscriber start audio clock.");
+            if (logLevel > SystemUtils::LogLevel::None) Serial.println("Subscriber start audio clock.");
         } else if (audioSystemManager.isClockRunning()) {
             ananasClient.adjustBufferReadIndex(now);
         }

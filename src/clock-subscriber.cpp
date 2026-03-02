@@ -6,6 +6,7 @@
 
 extern "C" uint8_t external_psram_size;
 
+SystemUtils::LogLevel logLevel{SystemUtils::LogLevel::None};
 AudioSystemConfig config{
     ananas::Constants::AudioBlockFrames,
     ananas::Constants::AudioSamplingRate
@@ -16,7 +17,10 @@ PTPSubscriber ptpSubscriber{
     Constants::PTPGeneralSocketParams,
     SystemUtils::LogLevel::None
 };
-ananas::AudioClient ananasClient{ananas::Constants::AudioSocketParams};
+ananas::AudioClient ananasClient{
+    ananas::Constants::AudioSocketParams,
+    logLevel
+};
 std::vector<NetworkProcessor *> networkProcessors{
     &ptpSubscriber,
     &ananasClient
@@ -28,7 +32,10 @@ std::vector<ProgramComponent *> programComponents{
     &audioSystemManager,
     &ananasClient
 };
-ComponentManager componentManager{programComponents, SystemUtils::LogLevel::Medium};
+ComponentManager componentManager{
+    programComponents,
+    logLevel
+};
 
 void setup()
 {
@@ -37,7 +44,7 @@ void setup()
     }
 #endif
 
-    Serial.begin(2000000);
+    Serial.begin(0);
 
     ptpSubscriber.onLockChanged([](const bool isLocked, const NanoTime now)
     {
@@ -45,7 +52,8 @@ void setup()
 
         if (isLocked && !audioSystemManager.isClockRunning()) {
             audioSystemManager.startClock();
-            Serial.println("Subscriber start audio clock.");
+            if (logLevel > SystemUtils::LogLevel::None)
+                Serial.println("Subscriber start audio clock.");
         } else if (audioSystemManager.isClockRunning()) {
             ananasClient.adjustBufferReadIndex(now);
         }
@@ -59,7 +67,8 @@ void setup()
 
     audioSystemManager.onInvalidSamplingRate([]
     {
-        Serial.printf("Resetting PTP and stopping audio.\n");
+        if (logLevel > SystemUtils::LogLevel::None)
+            Serial.printf("Resetting PTP and stopping audio.\n");
         ptpSubscriber.reset();
         audioSystemManager.stopClock();
     });
@@ -76,4 +85,6 @@ void setup()
 void loop()
 {
     componentManager.run();
+
+    ananasClient.setPercentCPU(ananasClient.getCurrentPercentCPU());
 }

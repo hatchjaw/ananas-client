@@ -305,12 +305,14 @@ void AudioSystemManager::handleISR()
 {
     if (numInterrupts == -1) {
         numInterrupts = 0;
-        timespec ts{};
-        qindesign::network::EthernetIEEE1588.readTimer(ts);
-        const auto ns{ts.tv_sec * ClockConstants::NanosecondsPerSecond + ts.tv_nsec};
-        Serial.print("First interrupt time: ");
-        Utils::printTime(ns);
-        Serial.println();
+        if (config.logging > SystemUtils::LogLevel::None) {
+            timespec ts{};
+            qindesign::network::EthernetIEEE1588.readTimer(ts);
+            const auto ns{ts.tv_sec * ClockConstants::NanosecondsPerSecond + ts.tv_nsec};
+            Serial.print("First interrupt time: ");
+            Utils::printTime(ns);
+            Serial.println();
+        }
     }
 
     if (++numInterrupts >= interruptsPerSecond) {
