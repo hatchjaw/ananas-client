@@ -10,7 +10,10 @@
 class ComponentManager final : public ProgramComponent
 {
 public:
-    explicit ComponentManager(const std::vector<ProgramComponent *> &components, SystemUtils::LogLevel logLevel = SystemUtils::None);
+    explicit ComponentManager(
+        const std::vector<ProgramComponent *> &components,
+        SystemUtils::LogLevel logLevel = SystemUtils::LogLevel::None
+    );
 
 protected:
     void beginImpl() override;

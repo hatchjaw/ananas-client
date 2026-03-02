@@ -131,12 +131,12 @@ private:
 
     AudioProcessor *audioProcessor{nullptr};
 
-    uint16_t interruptsPerSecond{0};
-    int16_t numInterrupts{-1};
+    int32_t interruptsPerSecond{0};
+    int32_t numInterrupts{-1};
     int32_t firstInterruptNS{0};
     int32_t audioPTPOffset{0};
     int32_t accumulatedOffset{0};
-    static constexpr int32_t MaxAccumulatedOffset{500'000};
+    static constexpr int32_t MaxAccumulatedOffset{100'000};
     static constexpr double KP{.1}, KI{.01};
 
     DMAChannel dma{false};

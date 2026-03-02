@@ -14,12 +14,16 @@ namespace ananas::network
         socket.beginMulticast(ip, eventPort);
         generalSocket.beginMulticast(ip, generalPort);
 
-        Serial.println("PTP Started");
+        if (logging > SystemUtils::LogLevel::None) {
+            Serial.println("PTP Started");
+        }
     }
 
     void PTPSubscriber::beginImpl()
     {
-        Serial.println("Clock Subscriber");
+        if (logging > SystemUtils::LogLevel::None) {
+            Serial.println("Clock Subscriber");
+        }
 
         txDelayReqPacket.header.messageType = Constants::DelayRequestMessage.type;
         txDelayReqPacket.header.messageLength = htons(Constants::DelayRequestMessage.size);
@@ -50,6 +54,7 @@ namespace ananas::network
         EthernetIEEE1588.writeTimer({0, 0});
 
         lockCount = 0;
+        exchangeId = -1;
     }
 
     void PTPSubscriber::onControllerUpdated(const std::function<void(double adjust)> &callback)
@@ -124,7 +129,7 @@ namespace ananas::network
     void PTPSubscriber::sendDelayReqMessage()
     {
         // Set the sequence ID for the outgoing packet.
-        txDelayReqPacket.header.sequenceID = htons(delayReqSequenceId);
+        txDelayReqPacket.header.sequenceID = htons(delayReqSequenceId++);
         // Make sure that it'll be timestamped.
         EthernetIEEE1588.timestampNextFrame();
         // Send it.
@@ -133,19 +138,19 @@ namespace ananas::network
         // Read the time, t3, at which it was sent.
         timespec t3{};
 
-        if (logging >= SystemUtils::Medium) { Serial.print("Wait for T3 delay send timestamp"); }
+        if (logging >= SystemUtils::LogLevel::Medium) { Serial.print("Wait for T3 delay send timestamp"); }
 
         while (!EthernetIEEE1588.readAndClearTxTimestamp(t3)) {
-            if (logging >= SystemUtils::Medium) { Serial.print("."); }
+            if (logging >= SystemUtils::LogLevel::Medium) { Serial.print("."); }
         }
 
-        if (logging >= SystemUtils::Medium) { Serial.println(" finished"); }
+        if (logging >= SystemUtils::LogLevel::Medium) { Serial.println(" finished"); }
 
         // Update current time exchange data with t3.
         pendingExchanges[exchangeId].t3 = Utils::timespecToNanoTime(t3);
         pendingExchanges[exchangeId].delaySequenceId = delayReqSequenceId;
 
-        if (logging > SystemUtils::None) {
+        if (logging > SystemUtils::LogLevel::None) {
             Serial.printf("(%5" PRIu16 ") Sent delay request,      t3 = ", exchangeId);
             Utils::printTime(pendingExchanges[exchangeId].t3);
         }
@@ -153,7 +158,7 @@ namespace ananas::network
 
     void PTPSubscriber::handleSyncMessage(const timespec &t2)
     {
-        if (logging >= SystemUtils::Medium) {
+        if (logging >= SystemUtils::LogLevel::Medium) {
             Serial.printf("PTPMessage messageType: %d versionPTP: %d domainNumer: %d\n",
                           rxSyncPacket.header.messageType,
                           rxSyncPacket.header.versionPTP,
@@ -167,13 +172,16 @@ namespace ananas::network
         if (rxSyncPacket.header.versionPTP == 2 &&
             rxSyncPacket.header.messageType == Constants::SyncMessage.type &&
             twoStep > 0) {
+            // This is the start of an exchange, so increment the internal
+            // echange ID.
+            ++exchangeId;
             // Update t2 for the current time exchange.
             pendingExchanges[exchangeId].t2 = Utils::timespecToNanoTime(t2);
             // The current exchange's sync sequence ID is the incoming packet's
             // sequence ID.
             pendingExchanges[exchangeId].syncSequenceId = ntohs(rxSyncPacket.header.sequenceID);
 
-            if (logging > SystemUtils::None) {
+            if (logging > SystemUtils::LogLevel::None) {
                 Serial.printf("(%5" PRIu16 ") Received sync,           t2 = ", exchangeId);
                 Utils::printTime(pendingExchanges[exchangeId].t2);
             }
@@ -183,7 +191,7 @@ namespace ananas::network
     void PTPSubscriber::handleFollowUpMessage()
     {
         const auto *p{reinterpret_cast<PTPV2Packet *>(&rxBuffer)};
-        if (logging >= SystemUtils::Medium) {
+        if (logging >= SystemUtils::LogLevel::Medium) {
             Serial.printf("PTPMessage messageType: %d versionPTP: %d domainNumer: %d\n",
                           p->header.messageType,
                           p->header.versionPTP,
@@ -198,7 +206,7 @@ namespace ananas::network
                 ns{Utils::readBigEndian<4>(&p->originTimestamp[6])};
         pendingExchanges[exchangeId].t1 = s * Constants::NanosecondsPerSecond + ns;
 
-        if (logging > SystemUtils::None) {
+        if (logging > SystemUtils::LogLevel::None) {
             Serial.printf("(%5" PRIu16 ") Received follow-up,      t1 = ", exchangeId);
             Utils::printTime(pendingExchanges[exchangeId].t1);
         }
@@ -217,7 +225,7 @@ namespace ananas::network
     {
         const auto *p{reinterpret_cast<PTPV2DelayResponsePacket *>(&rxBuffer)};
 
-        if (logging >= SystemUtils::Medium) {
+        if (logging >= SystemUtils::LogLevel::Medium) {
             Serial.printf("PTPMessage messageType: %d versionPTP: %d domainNumer: %d\n",
                           p->header.messageType,
                           p->header.versionPTP,
@@ -235,7 +243,7 @@ namespace ananas::network
                     ns{Utils::readBigEndian<4>(&p->receiveTimestamp[6])};
             pendingExchanges[exchangeId].t4 = s * Constants::NanosecondsPerSecond + ns;
 
-            if (logging > SystemUtils::None) {
+            if (logging > SystemUtils::LogLevel::None) {
                 Serial.printf("(%5" PRIu16 ") Received delay response, t4 = ", exchangeId);
                 Utils::printTime(pendingExchanges[exchangeId].t4);
             }
@@ -253,15 +261,9 @@ namespace ananas::network
                 }
             }
             for (uint16_t id: toErase) {
-                if (logging > SystemUtils::None) Serial.printf("Erasing exchange %" PRIu16 "\n", id);
+                if (logging > SystemUtils::LogLevel::None) Serial.printf("Erasing exchange %" PRIu16 "\n", id);
                 pendingExchanges.erase(id);
             }
-
-            // A t4 has been received, so in principle an exchange (whether
-            // truly completed or not) is over; this means moving on to the next
-            // exchange and the next delay request... when the time comes.
-            delayReqSequenceId++;
-            exchangeId++;
         } else {
             Serial.println("Delay resp message received, but source port identities didn't match");
         }
@@ -323,7 +325,7 @@ namespace ananas::network
             lockCount = 0;
         }
 
-        if (logging > SystemUtils::None) {
+        if (logging > SystemUtils::LogLevel::Medium) {
             Serial.printf("T2 diff: %" PRId64 " T1 diff: %" PRId64 "\n",
                           pendingExchanges[exchangeId].getT2Diff(),
                           pendingExchanges[exchangeId].getT1Diff());

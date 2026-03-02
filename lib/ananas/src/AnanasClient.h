@@ -30,7 +30,7 @@ namespace ananas
         void beginImpl() override;
 
     public:
-        explicit AudioClient(const SocketParams &p);
+        explicit AudioClient(const SocketParams &p, SystemUtils::LogLevel logLevel = SystemUtils::LogLevel::None);
 
         void run() override;
 
@@ -79,15 +79,16 @@ namespace ananas
         AudioPacket rxPacket{};
         PacketBuffer packetBuffer;
 
-        uint nWrite{0}, nRead{0};
+        uint32_t nWrite{0}, nRead{0};
         NanoTime prevTime{0}, totalTime{0};
-        uint sampleRate{0};
+        uint32_t sampleRate{0};
 
         bool mute{false};
         uint16_t numPacketBufferReadIndexAdjustments{0};
 
         Announcer<ClientAnnouncePacket> announcer;
         RebootListener rebootListener;
+        SystemUtils::LogLevel logging;
     };
 }
 

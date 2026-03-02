@@ -111,16 +111,17 @@ namespace ananas::network
         qindesign::network::EthernetUDP generalSocket{4};
         uint8_t rxBuffer[MTU];
         PTPV2Packet rxSyncPacket, txDelayReqPacket;
-        std::map<uint16_t, TimeExchange> pendingExchanges;
+        std::map<uint32_t, TimeExchange> pendingExchanges;
+        uint32_t lockCount{0};
         TimeExchange lastExchange{};
-        uint16_t exchangeId{0}, syncSequenceId{0}, delayReqSequenceId{0};
+        uint16_t delayReqSequenceId{0};
+        int16_t exchangeId{-1};
+        int32_t nspsAccu{0};
         double kP{1}, kI{.5};
         double drift{0}, adjust{0};
-        int nspsAccu{0};
-        uint lockCount{0};
         std::function<void(double)> controllerUpdatedCallback{nullptr};
         std::function<void(bool, NanoTime)> lockChangedCallback{nullptr};
-        int syncReceiveCounter{0}, followUpReceiveCounter{0};
+        int32_t syncReceiveCounter{0}, followUpReceiveCounter{0};
     };
 }
 

@@ -28,7 +28,7 @@ public:
         Priority240 = 240,
     };
 
-    enum LogLevel {
+    enum class LogLevel {
         None = 0,
         Low = 1,
         Medium,

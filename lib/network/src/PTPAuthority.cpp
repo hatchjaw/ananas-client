@@ -81,17 +81,9 @@ namespace ananas::network
 
         if (sendSync) {
             sendSync = false;
-            sendSyncMessage();
-        }
-
-        // Send a follow-up packet if enough time has elapsed, and if t1 has
-        // actually been set, i.e. t1 isn't zero.
-        if (elapsedSinceSync > followUpThresholdUs) {
-            elapsedSinceSync = 0;
-            if (t1.tv_sec > 0 && t1.tv_nsec > 0) {
-                sendFollowUpMessage();
-                syncSequenceID++;
-            }
+            auto t1{sendSyncMessage()};
+            sendFollowUpMessage(t1);
+            ++syncSequenceID;
         }
 
         // Attempt to read on event socket (port 319)
@@ -99,7 +91,7 @@ namespace ananas::network
             if (const auto size{socket.parsePacket()}; size > 0) {
                 timespec t4{};
                 if (socket.readWithTimestamp(reinterpret_cast<uint8_t *>(&rxDelayReqPacket), size, &t4) > 0) {
-                    if (logging > SystemUtils::None) {
+                    if (logging > SystemUtils::LogLevel::None) {
                         Serial.printf("(%5" PRIu16 ") Received delay request\n", ntohs(rxDelayReqPacket.header.sequenceID));
                     }
                     handleDelayReqMessage(t4);
@@ -155,7 +147,7 @@ namespace ananas::network
         generalSocket.send(ip, generalPort, reinterpret_cast<uint8_t *>(&txAnnouncePacket), Constants::AnnounceMessage.size);
     }
 
-    void PTPAuthority::sendSyncMessage()
+    timespec PTPAuthority::sendSyncMessage()
     {
         // Set up the message.
         txSyncPacket.header.sequenceID = htons(syncSequenceID);
@@ -164,24 +156,25 @@ namespace ananas::network
         // Send it.
         socket.send(ip, eventPort, reinterpret_cast<uint8_t *>(&txSyncPacket), Constants::SyncMessage.size);
 
-        if (logging > SystemUtils::None) {
+        if (logging > SystemUtils::LogLevel::None) {
             Serial.printf("(%5" PRIu16 ") Sent sync\n", syncSequenceID);
         }
 
-        if (logging >= SystemUtils::Medium) { Serial.print("Wait for T1 delay send timestamp"); }
+        timespec t1{};
+        if (logging >= SystemUtils::LogLevel::Medium) { Serial.print("Wait for T1 delay send timestamp"); }
         while (!EthernetIEEE1588.readAndClearTxTimestamp(t1)) {
-            if (logging >= SystemUtils::Medium) { Serial.print("."); }
+            if (logging >= SystemUtils::LogLevel::Medium) { Serial.print("."); }
         }
-        if (logging >= SystemUtils::Medium) { Serial.println(" finished"); }
+        if (logging >= SystemUtils::LogLevel::Medium) { Serial.println(" finished"); }
 
         // Add the hardware offset.
         const auto ns{Utils::timespecToNanoTime(t1) + Constants::HardwareOffsetNs};
         Utils::nanoTimeToTimespec(ns, t1);
 
-        elapsedSinceSync = 0;
+        return t1;
     }
 
-    void PTPAuthority::sendFollowUpMessage()
+    void PTPAuthority::sendFollowUpMessage(const timespec &t1)
     {
         // Set up the message.
         txFollowUpPacket.header.sequenceID = htons(syncSequenceID);
@@ -193,13 +186,10 @@ namespace ananas::network
         // Send it.
         generalSocket.send(ip, generalPort, reinterpret_cast<uint8_t *>(&txFollowUpPacket), Constants::FollowUpMessage.size);
 
-        if (logging > SystemUtils::None) {
+        if (logging > SystemUtils::LogLevel::None) {
             Serial.printf("(%5" PRIu16 ") Sent follow-up,      t1 = ", syncSequenceID);
             Utils::printTime(t1);
         }
-
-        // Reset t1.
-        t1 = {0, 0};
     }
 
     void PTPAuthority::sendDelayResponseMessage(const uint8_t *sourcePortID, const timespec &t4, const uint16_t seqID)
@@ -213,7 +203,7 @@ namespace ananas::network
 
         generalSocket.send(ip, generalPort, reinterpret_cast<uint8_t *>(&txDelayRespPacket), Constants::DelayResponseMessage.size);
 
-        if (logging > SystemUtils::None) {
+        if (logging > SystemUtils::LogLevel::None) {
             Serial.printf("(%5" PRIu16 ") Sent delay response, t4 = ", seqID);
             Utils::printTime(t4);
         }
@@ -221,7 +211,7 @@ namespace ananas::network
 
     void PTPAuthority::handleDelayReqMessage(timespec &t4)
     {
-        if (logging >= SystemUtils::Medium) {
+        if (logging >= SystemUtils::LogLevel::Medium) {
             Serial.printf("PTPMessage messageType: %d versionPTP: %d domainNumer: %d\n",
                           rxDelayReqPacket.header.messageType,
                           rxDelayReqPacket.header.versionPTP,

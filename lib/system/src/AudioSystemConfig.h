@@ -2,6 +2,7 @@
 #define TEENSY_AUDIOSYNC_CONFIG_H
 
 #include <Arduino.h>
+#include <SystemUtils.h>
 
 struct ClockConstants
 {
@@ -99,10 +100,15 @@ struct ClockConstants
 
 struct AudioSystemConfig final : Printable
 {
-    AudioSystemConfig(const uint16_t bufferSize, const uint32_t samplingRate, const float volume = .5f)
+    AudioSystemConfig(
+        const uint16_t bufferSize,
+        const uint32_t samplingRate,
+        const SystemUtils::LogLevel logLevel = SystemUtils::LogLevel::None,
+        const float volume = .5f)
         : kSamplingRate(samplingRate),
           kBufferSize(bufferSize),
           volume(volume),
+          logging(logLevel),
           samplingRateExact(samplingRate)
     {
     }
@@ -123,6 +129,7 @@ struct AudioSystemConfig final : Printable
     const uint32_t kSamplingRate;
     const uint16_t kBufferSize;
     float volume;
+    SystemUtils::LogLevel logging;
 
 private:
     double samplingRateExact;

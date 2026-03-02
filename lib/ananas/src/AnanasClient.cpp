@@ -19,10 +19,11 @@ namespace ananas
 
     //==========================================================================
 
-    AudioClient::AudioClient(const SocketParams &p)
+    AudioClient::AudioClient(const SocketParams &p, SystemUtils::LogLevel logLevel)
         : ListenerSocket(p),
           announcer(Constants::ClientAnnounceSocketParams),
-          rebootListener(Constants::RebootSocketParams)
+          rebootListener(Constants::RebootSocketParams),
+          logging(logLevel)
     {
     }
 
@@ -53,7 +54,6 @@ namespace ananas
                 }
 
                 announcer.txPacket.bufferFillPercent = announcer.txPacket.ptpLock ? packetBuffer.getFillPercent() : 50;
-                announcer.txPacket.percentCPU = getCurrentPercentCPU();
             } else break;
         }
 
@@ -154,8 +154,9 @@ namespace ananas
         const auto kMaxDiff{(Constants::NanosecondsPerSecond * Constants::FramesPerPacketExpected / sampleRate)};
 
         if (diff < 0 || diff > kMaxDiff) {
-            Serial.printf("\nPresentation time diff %" PRId64 " ns outside of range 0-%" PRId64 " ns\n"
-                          "Seeking closest packet... ", diff, kMaxDiff);
+            if (logging > SystemUtils::LogLevel::None)
+                Serial.printf("\nPresentation time diff %" PRId64 " ns outside of range 0-%" PRId64 " ns\n"
+                              "Seeking closest packet... ", diff, kMaxDiff);
             auto minDiff{INT64_MAX};
             size_t readIndex{0};
             packetBuffer.setReadIndex(readIndex);
@@ -171,10 +172,14 @@ namespace ananas
             }
 
             if (minDiff < kMaxDiff) {
-                Serial.printf("Found packet with presentation time diff %" PRId64 " ns (read index %d)\n", minDiff, readIndex);
+                if (logging > SystemUtils::LogLevel::None)
+                    Serial.printf("Found packet with presentation time diff %" PRId64 " ns (read index %d)\n",
+                                  minDiff, readIndex);
                 packetBuffer.setReadIndex(readIndex);
             } else {
-                Serial.printf("Unable to find a packet with a valid presentation time (min %" PRId64 " ns)\n", minDiff);
+                if (logging > SystemUtils::LogLevel::None)
+                    Serial.printf("Unable to find a packet with a valid presentation time (min %" PRId64 " ns)\n",
+                                  minDiff);
                 packetBuffer.setReadIndex(0);
             }
 

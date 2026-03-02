@@ -38,9 +38,9 @@ namespace ananas::network
 
         void sendAnnounceMessage();
 
-        void sendSyncMessage();
+        timespec sendSyncMessage();
 
-        void sendFollowUpMessage();
+        void sendFollowUpMessage(const timespec &t1);
 
         void sendDelayResponseMessage(const uint8_t *sourcePortID, const timespec &t4, uint16_t seqID);
 
@@ -50,9 +50,6 @@ namespace ananas::network
         bool sendAnnounce{false}, sendSync{false};
         uint ppsCount{0};
         IntervalTimer syncTimer;
-        timespec t1{0, 0};
-        elapsedMicros elapsedSinceSync{};
-        static constexpr uint32_t followUpThresholdUs{100};
         IntervalTimer announceTimer;
         PTPV2AnnouncePacket txAnnouncePacket;
         PTPV2Packet txSyncPacket, txFollowUpPacket, rxDelayReqPacket;
