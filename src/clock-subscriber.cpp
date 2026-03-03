@@ -46,6 +46,8 @@ void setup()
 
     Serial.begin(0);
 
+    ananasClient.setFirmwareType(SystemUtils::FirmwareType::client);
+
     ptpSubscriber.onLockChanged([](const bool isLocked, const NanoTime now)
     {
         ananasClient.setIsPtpLocked(isLocked);
