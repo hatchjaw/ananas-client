@@ -29,6 +29,7 @@ namespace ananas
 
     void AudioClient::beginImpl()
     {
+        announcer.txPacket.firmwareVersion = SystemUtils::getFirmwareVersion();
         announcer.begin();
     }
 
@@ -90,6 +91,11 @@ namespace ananas
                           numPacketBufferReadIndexAdjustments);
     }
 
+    void AudioClient::setFirmwareType(const SystemUtils::FirmwareType firmwareType)
+    {
+        announcer.txPacket.firmwareType = firmwareType;
+    }
+
     void AudioClient::setReportedSamplingRate(const double samplingRate)
     {
         announcer.txPacket.samplingRate = samplingRate;
@@ -114,12 +120,6 @@ namespace ananas
     void AudioClient::setModuleID(const int16_t moduleID)
     {
         announcer.txPacket.moduleID = moduleID;
-    }
-
-    void AudioClient::setYRange(const float minY, const float maxY)
-    {
-        announcer.txPacket.minYCoordinateM = minY;
-        announcer.txPacket.maxYCoordinateM = maxY;
     }
 
     void AudioClient::processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t numFrames)

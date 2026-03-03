@@ -2,10 +2,10 @@
 CELERITY = 343;
 
 // max Y distance (m) that a virtual source can be behind the speaker array
-MAX_Y_DIST = 10 <: attach(hbargraph("maxY", 0, 50));
+MAX_Y_DIST = 10;
 
 // max Y position (m) that a focused source can be in front of the array
-MIN_Y_DIST = -3 <: attach(hbargraph("minY", -10, 0));
+MIN_Y_DIST = -3;
 
 // Number of speakers in the array.
 N_SPEAKERS = 16;

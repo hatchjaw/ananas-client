@@ -27,9 +27,12 @@ namespace ananas
         uint8_t data[MTU - sizeof(Header)]{};
     };
 
+#pragma pack(push, 1)
     struct ClientAnnouncePacket : Packet
     {
         const uint32_t serial{SystemUtils::computeSerialNumber()};
+        SystemUtils::FirmwareType firmwareType;
+        SystemUtils::VersionNumber firmwareVersion;
         float samplingRate;
         float percentCPU;
         int32_t presentationOffsetFrame;
@@ -38,9 +41,8 @@ namespace ananas
         uint8_t bufferFillPercent;
         bool ptpLock;
         int16_t moduleID{-1};
-        float minYCoordinateM{0.f};
-        float maxYCoordinateM{0.f};
     };
+#pragma pack(pop)
 
     struct AuthorityAnnouncePacket : Packet
     {

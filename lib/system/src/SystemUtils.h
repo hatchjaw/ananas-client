@@ -3,6 +3,10 @@
 
 #include <Arduino.h>
 
+#ifndef LIB_VERSION
+  #define LIB_VERSION "0.0.0"
+#endif
+
 class SystemUtils
 {
 public:
@@ -35,6 +39,20 @@ public:
         High
     };
 
+    struct VersionNumber
+    {
+        uint8_t major;
+        uint8_t minor;
+        uint8_t revision;
+    };
+
+    enum class FirmwareType : uint8_t
+    {
+        client = 0,
+        wfsModule = 1,
+        ambisonicsModule
+    };
+
     static uint32_t computeSerialNumber()
     {
         uint32_t num{HW_OCOTP_MAC0 & 0xFFFFFF};
@@ -48,6 +66,31 @@ public:
         SCB_AIRCR = 0x05FA0004;
         while (true) {
         }
+    }
+
+    static constexpr uint8_t parseNum(const char* s, const int start, const int end) {
+        uint8_t result{0};
+        for (int i{start}; i < end; i++)
+            result = result * 10 + (s[i] - '0');
+        return result;
+    }
+
+    static constexpr int findDot(const char* s, const int from) {
+        int i{from};
+        while (s[i] != '.' && s[i] != '\0') i++;
+        return i;
+    }
+
+    static constexpr VersionNumber getFirmwareVersion()
+    {
+        constexpr auto d1{findDot(LIB_VERSION, 0)};
+        constexpr auto d2{findDot(LIB_VERSION, d1 + 1)};
+        constexpr auto end{findDot(LIB_VERSION, d2 + 1)};
+        return {
+            parseNum(LIB_VERSION, 0, d1),
+            parseNum(LIB_VERSION, d1 + 1, d2),
+            parseNum(LIB_VERSION, d2 + 1, end)
+        };
     }
 };
 

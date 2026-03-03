@@ -59,6 +59,8 @@ void setup()
 
     Serial.begin(0);
 
+    ananasClient.setFirmwareType(SystemUtils::FirmwareType::wfsModule);
+
     ptpSubscriber.onLockChanged([](const bool isLocked, const NanoTime now)
     {
         ananasClient.setIsPtpLocked(isLocked);
@@ -129,8 +131,6 @@ void setup()
         };
     }
 #endif
-
-    ananasClient.setYRange(wfs.getParamValue("minY"), wfs.getParamValue("maxY"));
 
     audioSystemManager.setAudioProcessor(&wfsModule);
     componentManager.begin();

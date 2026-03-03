@@ -42,6 +42,8 @@ namespace ananas
 
         size_t printTo(Print &p) const override;
 
+        void setFirmwareType(SystemUtils::FirmwareType firmwareType);
+
         void setReportedSamplingRate(double samplingRate);
 
         void setIsPtpLocked(bool ptpLock);
@@ -55,8 +57,6 @@ namespace ananas
         void setPercentCPU(float percentage);
 
         void setModuleID(int16_t moduleID);
-
-        void setYRange(float minY, float maxY);
 
     protected:
         void processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t numFrames) override;
