@@ -19,7 +19,7 @@
       "version": "https://github.com/hatchjaw/QNEthernet#6dcab8489bae38da99d4277994e1c51acb39501b"
     }
   ],
-  "version": "0.2.0",
+  "version": "0.2.1",
   "license": "GPL-3.0",
   "homepage": "https://github.com/hatchjaw/ananas-client",
   "frameworks": "arduino",
