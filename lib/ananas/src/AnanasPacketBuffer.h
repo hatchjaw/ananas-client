@@ -36,7 +36,7 @@ namespace ananas
 
         void clear();
 
-        uint8_t getFillPercent() const;
+        [[nodiscard]] uint8_t getFillPercent() const;
 
     private:
         size_t writeIndex{0}, readIndex{0};

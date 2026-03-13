@@ -1,6 +1,6 @@
 #include <AudioSystemManager.h>
 #include <AnanasClient.h>
-#include <ControlDataListener.h>
+#include <WFSControlDataListener.h>
 #include <wfs.h>
 #include <EthernetManager.h>
 #include <PTPSubscriber.h>
@@ -20,7 +20,7 @@ AudioSystemManager audioSystemManager{config};
 PTPSubscriber ptpSubscriber{
     Constants::PTPEventSocketParams,
     Constants::PTPGeneralSocketParams,
-    logLevel
+    SystemUtils::LogLevel::None
 };
 ananas::AudioClient ananasClient{
     ananas::Constants::AudioSocketParams,

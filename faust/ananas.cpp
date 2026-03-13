@@ -180,11 +180,10 @@ float AudioFaust::getParamValue(const std::string &path) const
 
 size_t AudioFaust::printTo(Print &p) const
 {
-    return p.print("WFS:               ") +
+    return p.print("AudioFaust:               ") +
          AudioProcessor::printTo(p) +
-         p.printf("  Module ID: %d, Speaker spacing: %.3f m\n",
-                  static_cast<int>(fUI->getParamValue("moduleID")),
-                  fUI->getParamValue("spacing"));
+         p.printf("  Module ID: %d\n",
+                  static_cast<int>(fUI->getParamValue("moduleID")));
 }
 
 size_t AudioFaust::getNumInputs() const

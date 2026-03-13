@@ -3,7 +3,7 @@
 
 #include <AnanasClient.h>
 
-#include "ControlContext.h"
+#include "WFSControlContext.h"
 #include <OSCBundle.h>
 #include <ProgramComponent.h>
 

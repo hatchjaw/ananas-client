@@ -14,7 +14,15 @@
 #endif
 
 #ifndef NUM_SOURCES
-#define NUM_SOURCES 8
+#define NUM_SOURCES 2
+#endif
+
+#ifndef PACKET_BUFFER_SIZE
+#define PACKET_BUFFER_SIZE 100
+#endif
+
+#ifndef FRAMES_PER_PACKET
+#define FRAMES_PER_PACKET 32
 #endif
 
 #define CYCLES_TO_APPROX_PERCENT(cycles) (((float)((uint32_t)(cycles) * 6400u) * (float)(AUDIO_SAMPLE_RATE_EXACT / AUDIO_BLOCK_SAMPLES)) / (float)(F_CPU_ACTUAL))
@@ -48,6 +56,11 @@ namespace ananas
             49163
         };
 
+        inline static const SocketParams AmbisonicsControlSocketParams{
+            {224, 4, 224, 5},
+            49164
+        };
+
         inline static const AnnounceSocketParams AuthorityAnnounceSocketParams{
             {
                 {224, 4, 224, 6},
@@ -65,9 +78,9 @@ namespace ananas
         };
 
         static constexpr size_t SampleSizeBytes{sizeof(int16_t)};
-        static constexpr size_t PacketBufferCapacity{50};
+        static constexpr size_t PacketBufferCapacity{PACKET_BUFFER_SIZE};
         static constexpr int64_t PacketReproductionOffsetNs{NanosecondsPerSecond / 20};
-        static constexpr size_t FramesPerPacketExpected{32};
+        static constexpr size_t FramesPerPacketExpected{FRAMES_PER_PACKET};
 
         static constexpr uint ClientReportThresholdPackets{10000};
     };
@@ -96,7 +109,7 @@ namespace ananas
             return static_cast<uint32_t>(numCycles * Constants::NanosecondsPerCpuCycle);
         }
 
-        template <typename T>
+        template<typename T>
         static T clamp(T value, const T min, const T max)
         {
             if (value < min) {

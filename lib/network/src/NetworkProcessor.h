@@ -12,7 +12,7 @@ public:
 
     virtual void connect() = 0;
 protected:
-    qindesign::network::EthernetUDP socket{4};
+    qindesign::network::EthernetUDP socket{8};
 };
 
 }
