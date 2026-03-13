@@ -13,7 +13,7 @@ N_SPEAKERS = 16;
 // Each module (Teensy) controls two speakers.
 SPEAKERS_PER_MODULE = 2;
 
-// Number of sound sources (i.e. mono channels)
+// Number of sound sources
 N_SOURCES = 16;
 
 // Max speaker spacing; determines maximum delay line lengths.

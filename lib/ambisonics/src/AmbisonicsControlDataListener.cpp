@@ -1,12 +1,11 @@
-#include "ControlDataListener.h"
-
+#include "AmbisonicsControlDataListener.h"
 #include <AnanasUtils.h>
 #include <QNEthernet.h>
 
-namespace ananas::WFS
+namespace ananas::Ambisonics
 {
     ControlDataListener::ControlDataListener(ControlContext &controlContext)
-        : ListenerSocket(Constants::WFSControlSocketParams),
+        : ListenerSocket(Constants::AmbisonicsControlSocketParams),
           context(controlContext)
     {
     }
@@ -24,17 +23,13 @@ namespace ananas::WFS
             bundleIn.empty();
             bundleIn.fill(rxBuffer, size);
             if (!bundleIn.hasError() && bundleIn.size() > 0) {
-                bundleIn.route("/source", [this](OSCMessage &msg, int addrOffset) { parsePosition(msg, addrOffset); });
                 bundleIn.route("/module", [this](OSCMessage &msg, int addrOffset) { parseModule(msg, addrOffset); });
-                bundleIn.route("/spacing", [this](OSCMessage &msg, int addrOffset) { parseSpacing(msg, addrOffset); });
             } else {
                 // Try as message
                 messageIn.empty();
                 messageIn.fill(rxBuffer, size);
                 if (!messageIn.hasError() && messageIn.size() > 0) {
-                    messageIn.route("/source", [this](OSCMessage &msg, int addrOffset) { parsePosition(msg, addrOffset); });
                     messageIn.route("/module", [this](OSCMessage &msg, int addrOffset) { parseModule(msg, addrOffset); });
-                    messageIn.route("/spacing", [this](OSCMessage &msg, int addrOffset) { parseSpacing(msg, addrOffset); });
                 }
             }
         }
@@ -57,28 +52,6 @@ namespace ananas::WFS
             const auto numericID{strtof(id, nullptr)};
             // Serial.printf("Receiving module ID: %f\n", numericID);
             context.moduleID = numericID;
-        }
-    }
-
-    void ControlDataListener::parseSpacing(OSCMessage &msg, int addrOffset) const
-    {
-        const auto spacing{msg.getFloat(0)};
-        // Serial.printf("Receiving \"spacing\": %f\n", spacing);
-        context.speakerSpacing = spacing;
-    }
-
-    void ControlDataListener::parsePosition(OSCMessage &msg, int addrOffset) const
-    {
-        // Get the source index and coordinate axis, e.g. "0/x"
-        char path[20];
-        msg.getAddress(path, addrOffset + 1);
-        // Get the coordinate value (-1,1).
-        const auto pos{msg.getFloat(0)};
-        // Serial.printf("Receiving \"%s\": %f\n", path, pos);
-        // Set the parameter.
-        auto it{context.sourcePositions.find(path)};
-        if (it != context.sourcePositions.end()) {
-            it->second.set(pos);
         }
     }
 }

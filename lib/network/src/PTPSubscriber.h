@@ -117,7 +117,7 @@ namespace ananas::network
         uint16_t delayReqSequenceId{0};
         int16_t exchangeId{-1};
         int32_t nspsAccu{0};
-        double kP{1}, kI{.5};
+        double kP{.5}, kI{.25};
         double drift{0}, adjust{0};
         std::function<void(double)> controllerUpdatedCallback{nullptr};
         std::function<void(bool, NanoTime)> lockChangedCallback{nullptr};

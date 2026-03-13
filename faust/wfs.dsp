@@ -22,13 +22,11 @@ speakerArray(x, y, s, id) = _ <:
     par(i, SPEAKERS_PER_MODULE, _,distanceSim(hypotenuse(i)) : select2(y > 0) :
         (focusedSourceDelay(i),virtualSourceDelay(i) : select2(y > 0)),_ : de.fdelay(MAX_HYPOTENUSE * samplesPerMeter))
 with{
-    arrayWidth = (N_SPEAKERS - 1) * s;
     MAX_ARRAY_WIDTH = (N_SPEAKERS - 1) * MAX_SPEAKER_DIST;
     MAX_HYPOTENUSE = MIN_Y_DIST^2 + MAX_ARRAY_WIDTH^2 : sqrt;
 
-    virtualSourceDelay(k) = smallDelay(k);
-    focusedSourceDelay(k) = MAX_HYPOTENUSE - hypotenuse(k) * samplesPerMeter;
-
+    arrayWidth = (N_SPEAKERS - 1) * s;
+    currentMaxHypotenuse = MIN_Y_DIST^2 + arrayWidth^2 : sqrt;
     // Number of samples it takes sound to travel one meter.
     samplesPerMeter = ma.SR/CELERITY;
 
@@ -37,27 +35,30 @@ with{
     // Get x between the source and specific speaker in the array, i.e. the
     // cathetus on the x-axis of the right triangle described by y and the
     // speaker position.
-    // E.g. for 16 speakers (8 modules), with a spacing, s, of .25 m; NB the
-    // centre of the array lies between speaker 1 of module 3 and speaker 0 of
-    // module 4, so it's necessary to subtract .5 from the multiplier to s.
-    //      array width, w = (16-1)*.25 = 3.75,
-    //             range x = -3.75/2 <= x <= 3.75/2 = -1.875 <= x <= 1.875
+    // E.g. for 16 speakers (8 modules), with a spacing, s, of .25 m:
+    //      array width, w = (16-1) * .25 = 3.75,
     //        let module m = 2 (third module in array)
     //       let speaker j = 0 (first speaker in module)
-    //               let x = 0 (m, relative to centre of array)
-    //                  cx = x + s*((m - 4 + .5) * 2 + j - .5)
-    //                     = 0 + .25*(-1.5*2 + 0 - .5)
-    //                     = .25 * -3.5
-    //                     = -0.875
+    //               let x = 0 (m, relative to left of array)
+    //                  cx = x - s * (m * 2 + j)
+    //                     = 0 - .25 * (2 * 2 + 0)
+    //                     = -.25 * 4
+    //                     = -1
     //
     //               let m = 7, j = 1, x = 0
-    //                  cx = 0 + .25*(3.5*2 + 1 - .5) = 1.875
+    //                  cx = 0 - .25 * (7 * 2 + 1) = -3.75
     //
     //               let m = 0, j = 0, x = 0
-    //                  cx = 0 + .25*(-3.5*2 + 0 - .5) = -1.875
-    cathetusX(k) = x - (s*(k + id*2));
+    //                  cx = 0 + .25 * (0 * 2 + 0) = 0
+    cathetusX(k) = x - (s * (k + id * 2));
     hypotenuse(j) = cathetusX(j)^2 + y^2 : sqrt;
-    smallDelay(j) = (hypotenuse(j) - y)*samplesPerMeter;
+
+    virtualSourceDelay(k) = smallDelay(k)
+    with {
+        smallDelay(j) = (hypotenuse(j) - y) * samplesPerMeter;
+    };
+
+    focusedSourceDelay(k) = (currentMaxHypotenuse - hypotenuse(k)) * samplesPerMeter;
 };
 
 // Take each source...
@@ -75,7 +76,7 @@ with{
     // Set speaker spacing (m)
     spacing = globalGroup(hslider("spacing[unit:m]", .2, .05, MAX_SPEAKER_DIST, .01));
 
-    maxX = spacing*(N_SPEAKERS-1)/2;
+    maxX = spacing*(N_SPEAKERS-1);
 
     // Use normalised input co-ordinate space; scale to dimensions.
     x(p) = hslider("%p/x", 0, -1, 1, 0.001) : +(1) : /(2) : *(maxX);

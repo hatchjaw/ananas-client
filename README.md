@@ -19,12 +19,14 @@ with the Teensy Audio Library.
   [audio](http://pjrc.com/store/teensy3_audio.html) add-ons
 - [A network switch with PTP support](#a-network-switch-with-ptp-support)
 
-To install software dependencies, execute the script at
-[scripts/installs-tools.sh](./scripts/install-tools.sh)
+**To install software dependencies**, execute the script at
+[scripts/installs-tools.sh](./scripts/install-tools.sh); this will install:
 
 - [PlatformIO CLI](#platformio)
 - [tytools](#tytools)
 - [Faust](#faust)
+
+A selection of additional dependencies are worth taking note of:
 
 - [Other dependencies](#other-dependencies)
 
@@ -65,16 +67,19 @@ environments and uploading to multiple Teensies in a single command. They are
 thus dependent upon the availability of the `pio` CLI and Niels Martigène's
 very useful `tytools` utilities, specifically `tycmd`. Once again
 [scripts/installs-tools.sh](./scripts/install-tools.sh) follows the [build
-instructions](https://koromix.dev/tytools#hacking-tytools); after building `tycmd`, it is copied to `~/.local/bin`.
+instructions](https://koromix.dev/tytools#hacking-tytools); after building `tycmd`, it is copied to `~/.local/bin`, 
+which should be in your `$PATH`.
 
 ### Faust
 
 A local installation of the Faust compiler and associated ecosystem is required
-to compile .dsp files to classes compatible with the audiosync/ananas
-`AudioProcessor` API. [scripts/installs-tools.sh](./scripts/install-tools.sh)
-essentially follows Faust's basic [build instructions](https://github.com/grame-cncm/faust/wiki/BuildingSimple).
+to compile .dsp files to classes compatible with the `AudioProcessor` API. 
+[scripts/installs-tools.sh](./scripts/install-tools.sh) essentially follows 
+Faust's basic 
+[build instructions](https://github.com/grame-cncm/faust/wiki/BuildingSimple).
 
-With the Faust compiler installed, navigate to the [faust](faust) directory and run
+With the Faust compiler installed, navigate to the [faust](faust) directory and 
+run
 
 ```shell
 ./faust2ananas -lib [program_name].dsp

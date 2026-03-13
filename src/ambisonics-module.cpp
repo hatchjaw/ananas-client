@@ -1,15 +1,13 @@
 #include <AudioSystemManager.h>
 #include <AnanasClient.h>
-#include <WFSControlDataListener.h>
-#include <wfs.h>
+#include <AmbisonicsControlDataListener.h>
+#include <ambisonics.h>
 #include <EthernetManager.h>
 #include <PTPSubscriber.h>
 #include <ComponentManager.h>
-#include "audio_processors/DistributedWFSProcessor.h"
+#include "audio_processors/DistributedAmbisonicsProcessor.h"
 
-using namespace ananas::WFS;
-
-extern "C" uint8_t external_psram_size;
+using namespace ananas::Ambisonics;
 
 SystemUtils::LogLevel logLevel{SystemUtils::LogLevel::None};
 AudioSystemConfig config{
@@ -28,21 +26,21 @@ ananas::AudioClient ananasClient{
 };
 ControlContext context;
 ControlDataListener controlDataListener{context};
-wfs wfs;
-WFSModule wfsModule{ananasClient, wfs, context};
+ambisonics ambisonics;
+AmbisonicsModule ambisonicsModule{ananasClient, ambisonics, context};
 std::vector<NetworkProcessor *> networkProcessors{
     &ptpSubscriber,
     &ananasClient,
     &controlDataListener
 };
-EthernetManager ethernetManager{"t41wfsmodule", networkProcessors};
+EthernetManager ethernetManager{"t41ambisonicsmodule", networkProcessors};
 std::vector<ProgramComponent *> programComponents{
     &ethernetManager,
     &ptpSubscriber,
     &audioSystemManager,
     &ananasClient,
-    &wfs,
-    &wfsModule,
+    &ambisonics,
+    &ambisonicsModule,
     &controlDataListener
 };
 ComponentManager componentManager{
@@ -59,7 +57,7 @@ void setup()
 
     Serial.begin(0);
 
-    ananasClient.setFirmwareType(SystemUtils::FirmwareType::wfsModule);
+    ananasClient.setFirmwareType(SystemUtils::FirmwareType::ambisonicsModule);
 
     ptpSubscriber.onLockChanged([](const bool isLocked, const NanoTime now)
     {
@@ -93,46 +91,10 @@ void setup()
 
     context.moduleID.onChange = [](const int value)
     {
-        wfs.setParamValue("moduleID", static_cast<float>(value));
+        ambisonics.setParamValue("moduleID", static_cast<float>(value));
     };
-    context.speakerSpacing.onChange = [](const float value)
-    {
-        wfs.setParamValue("spacing", value);
-    };
-    // Set up source positions.
-    char path[5];
-    for (size_t i{0}; i < ananas::Constants::MaxChannels; ++i) {
-        sprintf(path, "%d/x", i);
-        context.sourcePositions.insert(ananas::WFS::SourcePositionsMap::value_type(
-                path,
-                ananas::SmoothedValue<float>{0., .975f})
-        );
-        sprintf(path, "%d/y", i);
-        context.sourcePositions.insert(ananas::WFS::SourcePositionsMap::value_type(
-                path,
-                ananas::SmoothedValue<float>{0., .975f})
-        );
-    }
-    for (auto &sp: context.sourcePositions) {
-#ifdef USE_SI_SMOO
-        // If smoothing in Faust with si.smoo:
-        sp.second.onSet = [sp](const float value)
-        {
-            // Serial.printf("Updating %s: %f\n", sp.first.c_str(), value);
-            wfs.setParamValue(sp.first, value);
-        };
-#else
-        // If smoothing outside of Faust:
-        sp.second.onChange = [sp](float value)
-        {
-            // Serial.printf("%s changed: %.9f\n", sp.first.c_str(), value);
-            value = ananas::Utils::clamp(value, -1.f, 1.f);
-            wfs.setParamValue(sp.first, value);
-        };
-    }
-#endif
 
-    audioSystemManager.setAudioProcessor(&wfsModule);
+    audioSystemManager.setAudioProcessor(&ambisonicsModule);
     componentManager.begin();
 }
 
@@ -140,6 +102,6 @@ void loop()
 {
     componentManager.run();
 
-    ananasClient.setPercentCPU(wfsModule.getCurrentPercentCPU());
-    ananasClient.setModuleID(static_cast<int16_t>(wfs.getParamValue("moduleID")));
+    ananasClient.setPercentCPU(ambisonicsModule.getCurrentPercentCPU());
+    ananasClient.setModuleID(static_cast<int16_t>(ambisonics.getParamValue("moduleID")));
 }
