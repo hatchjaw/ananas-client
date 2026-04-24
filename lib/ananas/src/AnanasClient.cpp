@@ -6,21 +6,8 @@
 
 namespace ananas
 {
-    ListenerSocket::ListenerSocket(const SocketParams &p)
-        : ip(p.ip),
-          port(p.port)
-    {
-    }
-
-    void ListenerSocket::connect()
-    {
-        socket.beginMulticast(ip, port);
-    }
-
-    //==========================================================================
-
     AudioClient::AudioClient(const SocketParams &p, SystemUtils::LogLevel logLevel)
-        : ListenerSocket(p),
+        : MulticastListenerSocket(p),
           announcer(Constants::ClientAnnounceSocketParams),
           rebootListener(Constants::RebootSocketParams),
           logging(logLevel)
@@ -64,7 +51,7 @@ namespace ananas
 
     void AudioClient::connect()
     {
-        ListenerSocket::connect();
+        MulticastListenerSocket::connect();
         announcer.connect();
         rebootListener.connect();
     }
@@ -117,9 +104,12 @@ namespace ananas
         announcer.txPacket.percentCPU = percentage;
     }
 
-    void AudioClient::setModuleID(const int16_t moduleID)
+    void AudioClient::setSecondarySourceCoordinates(const float ss0x, const float ss0y, const float ss1x, const float ss1y)
     {
-        announcer.txPacket.moduleID = moduleID;
+        announcer.txPacket.secondarySource0x = ss0x;
+        announcer.txPacket.secondarySource0y = ss0y;
+        announcer.txPacket.secondarySource1x = ss1x;
+        announcer.txPacket.secondarySource1y = ss1y;
     }
 
     void AudioClient::processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t numFrames)
@@ -197,7 +187,7 @@ namespace ananas
     //==========================================================================
 
     AudioClient::RebootListener::RebootListener(const SocketParams &p)
-        : ListenerSocket(p)
+        : MulticastListenerSocket(p)
     {
     }
 

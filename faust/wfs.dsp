@@ -19,7 +19,7 @@ with{
 // i.e. give each source a distance simulation and a delay
 // relative to each speaker.
 speakerArray(x, y, s, id) = _ <:
-    par(i, SPEAKERS_PER_MODULE, _,distanceSim(hypotenuse(i)) : select2(y > 0) :
+    par(i, SPEAKERS_PER_MODULE, _,_ : select2(y > 0) :
         (focusedSourceDelay(i),virtualSourceDelay(i) : select2(y > 0)),_ : de.fdelay(MAX_HYPOTENUSE * samplesPerMeter))
 with{
     MAX_ARRAY_WIDTH = (N_SPEAKERS - 1) * MAX_SPEAKER_DIST;

@@ -1,5 +1,5 @@
-#ifndef CONTROLDATALISTENER_H
-#define CONTROLDATALISTENER_H
+#ifndef VIRTUALSOURCECOORDINATELISTENER_H
+#define VIRTUALSOURCECOORDINATELISTENER_H
 
 #include <AnanasClient.h>
 
@@ -9,11 +9,11 @@
 
 namespace ananas::WFS
 {
-    class ControlDataListener final : public ListenerSocket,
+    class VirtualSourceCoordinateListener final : public MulticastListenerSocket,
                                       public ProgramComponent
     {
     public:
-        explicit ControlDataListener(ControlContext &controlContext);
+        explicit VirtualSourceCoordinateListener(ControlContext &controlContext);
 
     protected:
         void beginImpl() override;
@@ -24,13 +24,8 @@ namespace ananas::WFS
         size_t printTo(Print &p) const override;
 
     private:
-        void parseModule(OSCMessage &msg, int addrOffset) const;
+        void parseVirtualSourcePosition(OSCMessage &msg, int addrOffset) const;
 
-        void parseSpacing(OSCMessage &msg, int addrOffset) const;
-
-        void parsePosition(OSCMessage &msg, int addrOffset) const;
-
-    private:
         /**
         * Max message size is ~44 bytes; leave some headroom.
         */
@@ -41,4 +36,4 @@ namespace ananas::WFS
     };
 } // ananas::WFS
 
-#endif //CONTROLDATALISTENER_H
+#endif //VIRTUALSOURCECOORDINATELISTENER_H

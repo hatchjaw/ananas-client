@@ -7,13 +7,13 @@
 
 namespace ananas::WFS
 {
-    using SourcePositionsMap = std::unordered_map<std::string, SmoothedValue<float> >;
+    using SecondarySourceCoordinatesMap = std::unordered_map<std::string, ListenableParameter<float> >;
+    using VirtualSourceCoordinatesMap = std::unordered_map<std::string, SmoothedValue<float> >;
 
     struct ControlContext
     {
-        ListenableParameter<int> moduleID;
-        ListenableParameter<float> speakerSpacing;
-        SourcePositionsMap sourcePositions;
+        SecondarySourceCoordinatesMap secondarySourceCoordinates;
+        VirtualSourceCoordinatesMap virtualSourceCoordinates;
     };
 };
 

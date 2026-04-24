@@ -1,10 +1,12 @@
 #include <AudioSystemManager.h>
 #include <AnanasClient.h>
-#include <WFSControlDataListener.h>
-#include <wfs.h>
+#include <wfs2.h>
+#include <SecondarySourceCoordinateListener.h>
+#include <VirtualSourceCoordinateListener.h>
 #include <EthernetManager.h>
 #include <PTPSubscriber.h>
 #include <ComponentManager.h>
+
 #include "audio_processors/DistributedWFSProcessor.h"
 
 using namespace ananas::WFS;
@@ -27,13 +29,15 @@ ananas::AudioClient ananasClient{
     logLevel
 };
 ControlContext context;
-ControlDataListener controlDataListener{context};
-wfs wfs;
+VirtualSourceCoordinateListener vsListener{context};
+SecondarySourceCoordinateListener ssListener{context};
+wfs2 wfs;
 WFSModule wfsModule{ananasClient, wfs, context};
 std::vector<NetworkProcessor *> networkProcessors{
     &ptpSubscriber,
     &ananasClient,
-    &controlDataListener
+    &vsListener,
+    &ssListener
 };
 EthernetManager ethernetManager{"t41wfsmodule", networkProcessors};
 std::vector<ProgramComponent *> programComponents{
@@ -43,7 +47,8 @@ std::vector<ProgramComponent *> programComponents{
     &ananasClient,
     &wfs,
     &wfsModule,
-    &controlDataListener
+    &vsListener,
+    &ssListener
 };
 ComponentManager componentManager{
     programComponents,
@@ -91,48 +96,68 @@ void setup()
         ananasClient.setAudioPtpOffsetNs(offset);
     });
 
-    context.moduleID.onChange = [](const int value)
-    {
-        wfs.setParamValue("moduleID", static_cast<float>(value));
-    };
-    context.speakerSpacing.onChange = [](const float value)
-    {
-        wfs.setParamValue("spacing", value);
-    };
-    // Set up source positions.
-    char path[5];
+    // Set up virtual source positions.
+    char path[8];
+    for (size_t i{0}; i < 2; ++i) {
+        sprintf(path, "ss/%d/x", i);
+        context.secondarySourceCoordinates.insert(SecondarySourceCoordinatesMap::value_type(
+            path,
+            ananas::ListenableParameter(0.f)
+        ));
+        sprintf(path, "ss/%d/y", i);
+        context.secondarySourceCoordinates.insert(SecondarySourceCoordinatesMap::value_type(
+            path,
+            ananas::ListenableParameter(0.f)
+        ));
+    }
+
+    for (auto &ss: context.secondarySourceCoordinates) {
+        ss.second.onChange = [ss](const float value)
+        {
+            // Serial.printf("%s changed: %.9f\n", ss.first.c_str(), value);
+            wfs.setParamValue(ss.first, value);
+            ananasClient.setSecondarySourceCoordinates(
+                wfs.getParamValue("ss/0/x"),
+                wfs.getParamValue("ss/0/y"),
+                wfs.getParamValue("ss/1/x"),
+                wfs.getParamValue("ss/1/y")
+            );
+        };
+    }
+
     for (size_t i{0}; i < ananas::Constants::MaxChannels; ++i) {
-        sprintf(path, "%d/x", i);
-        context.sourcePositions.insert(ananas::WFS::SourcePositionsMap::value_type(
+        sprintf(path, "vs/%d/x", i);
+        context.virtualSourceCoordinates.insert(VirtualSourceCoordinatesMap::value_type(
                 path,
                 ananas::SmoothedValue<float>{0., .975f})
         );
-        sprintf(path, "%d/y", i);
-        context.sourcePositions.insert(ananas::WFS::SourcePositionsMap::value_type(
+        sprintf(path, "vs/%d/y", i);
+        context.virtualSourceCoordinates.insert(VirtualSourceCoordinatesMap::value_type(
                 path,
                 ananas::SmoothedValue<float>{0., .975f})
         );
     }
-    for (auto &sp: context.sourcePositions) {
+    for (auto &vs: context.virtualSourceCoordinates) {
 #ifdef USE_SI_SMOO
         // If smoothing in Faust with si.smoo:
-        sp.second.onSet = [sp](const float value)
+        vs.second.onSet = [vs](const float value)
         {
-            // Serial.printf("Updating %s: %f\n", sp.first.c_str(), value);
-            wfs.setParamValue(sp.first, value);
+            // Serial.printf("Updating %s: %f\n", vs.first.c_str(), value);
+            wfs.setParamValue(vs.first, value);
         };
 #else
         // If smoothing outside of Faust:
-        sp.second.onChange = [sp](float value)
+        vs.second.onChange = [vs](float value)
         {
-            // Serial.printf("%s changed: %.9f\n", sp.first.c_str(), value);
-            value = ananas::Utils::clamp(value, -1.f, 1.f);
-            wfs.setParamValue(sp.first, value);
+            // Serial.printf("%s changed: %.9f\n", vs.first.c_str(), value);
+            // value = ananas::Utils::clamp(value, -1.f, 1.f);
+            wfs.setParamValue(vs.first, value);
         };
     }
 #endif
 
     audioSystemManager.setAudioProcessor(&wfsModule);
+
     componentManager.begin();
 }
 
@@ -141,5 +166,4 @@ void loop()
     componentManager.run();
 
     ananasClient.setPercentCPU(wfsModule.getCurrentPercentCPU());
-    ananasClient.setModuleID(static_cast<int16_t>(wfs.getParamValue("moduleID")));
 }

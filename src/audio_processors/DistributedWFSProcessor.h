@@ -33,7 +33,7 @@ protected:
     void processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t const numFrames) override
     {
         // Advance smoothed parameters, i.e. source positions
-        for (auto &sp: context.sourcePositions) {
+        for (auto &sp: context.virtualSourceCoordinates) {
             sp.second.getNext();
         }
         client.processAudio(inputBuffer, outputBuffer, numFrames);

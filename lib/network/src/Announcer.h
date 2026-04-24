@@ -1,5 +1,5 @@
-#ifndef ANNOUNCER_H
-#define ANNOUNCER_H
+#ifndef ANANASANNOUNCER_H
+#define ANANASANNOUNCER_H
 
 #include "NetworkProcessor.h"
 #include "ProgramComponent.h"
@@ -54,4 +54,4 @@ namespace ananas::network
     };
 }
 
-#endif //ANNOUNCER_H
+#endif //ANANASANNOUNCER_H

@@ -182,8 +182,11 @@ size_t AudioFaust::printTo(Print &p) const
 {
     return p.print("AudioFaust:               ") +
          AudioProcessor::printTo(p) +
-         p.printf("  Module ID: %d\n",
-                  static_cast<int>(fUI->getParamValue("moduleID")));
+         p.printf("  Secondary source co-ordinates: (%f, %f), (%f, %f)\n",
+                  fUI->getParamValue("ss/0/x"),
+                  fUI->getParamValue("ss/0/y"),
+                  fUI->getParamValue("ss/1/x"),
+                  fUI->getParamValue("ss/1/y"));
 }
 
 size_t AudioFaust::getNumInputs() const
