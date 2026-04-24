@@ -66,9 +66,9 @@ namespace ananas::network
         uint8_t timestamp[10]{};
         int16_t currentUTCOffset{37};
         uint8_t reserved3{0};
-        uint8_t gmPriority1{128};
+        uint8_t gmPriority1{64};
         uint32_t gmClockQuality{0xFFFFFEF8};
-        uint8_t gmPriority12{128};
+        uint8_t gmPriority2{64};
         uint8_t gmIdentity[8]{};
         uint8_t stepsRemoved[2]{};
         uint8_t timeSource{0xa0};

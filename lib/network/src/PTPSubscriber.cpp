@@ -265,7 +265,15 @@ namespace ananas::network
                 pendingExchanges.erase(id);
             }
         } else {
-            Serial.println("Delay resp message received, but source port identities didn't match");
+            Serial.println("Delay resp message received, but requesting port identity didn't match source port identity");
+            for (auto i{0}; i < 10; i++) {
+                Serial.printf("%0X", p->requestingPortIdentity[i]);
+            }
+            Serial.println();
+            for (auto i{0}; i < 10; i++) {
+                Serial.printf("%0X", txDelayReqPacket.header.sourcePortIdentity[i]);
+            }
+            Serial.println();
         }
     }
 

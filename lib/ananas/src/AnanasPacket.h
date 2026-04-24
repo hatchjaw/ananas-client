@@ -14,12 +14,14 @@ namespace ananas
 
     struct AudioPacket : Packet
     {
-        struct alignas(16) Header
+#pragma pack(push, 1)
+        struct Header
         {
             NanoTime time;
             uint8_t numChannels;
             uint16_t numFrames;
         };
+#pragma pack(pop)
 
         int16_t *audio() { return reinterpret_cast<int16_t *>(data); }
 
@@ -40,7 +42,10 @@ namespace ananas
         int32_t audioPtpOffsetNs;
         uint8_t bufferFillPercent;
         bool ptpLock;
-        int16_t moduleID{-1};
+        float secondarySource0x{0.f};
+        float secondarySource0y{0.f};
+        float secondarySource1x{0.f};
+        float secondarySource1y{0.f};
     };
 #pragma pack(pop)
 

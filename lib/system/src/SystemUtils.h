@@ -50,7 +50,8 @@ public:
     {
         client = 0,
         wfsModule = 1,
-        ambisonicsModule
+        ambisonicsModule,
+        passthrough
     };
 
     static uint32_t computeSerialNumber()

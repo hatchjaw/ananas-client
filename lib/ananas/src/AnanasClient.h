@@ -7,22 +7,11 @@
 #include <ProgramComponent.h>
 #include <NetworkProcessor.h>
 #include <Announcer.h>
+#include <Listener.h>
 
 namespace ananas
 {
-    class ListenerSocket : public NetworkProcessor
-    {
-    public:
-        explicit ListenerSocket(const SocketParams &p);
-
-        void connect() override;
-
-    private:
-        IPAddress ip;
-        uint16_t port;
-    };
-
-    class AudioClient final : public ListenerSocket,
+    class AudioClient final : public MulticastListenerSocket,
                               public AudioProcessor,
                               public ProgramComponent
     {
@@ -56,13 +45,13 @@ namespace ananas
 
         void setPercentCPU(float percentage);
 
-        void setModuleID(int16_t moduleID);
+        void setSecondarySourceCoordinates(float ss0x, float ss0y, float ss1x, float ss1y);
 
     protected:
         void processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t numFrames) override;
 
     private:
-        class RebootListener final : public ListenerSocket,
+        class RebootListener final : public MulticastListenerSocket,
                                      public ProgramComponent
         {
         protected:

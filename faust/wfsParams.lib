@@ -7,6 +7,15 @@ MAX_Y_DIST = 10;
 // max Y position (m) that a focused source can be in front of the array
 MIN_Y_DIST = -3;
 
+// max Y distance (m) that a virtual source can be behind the speaker array
+MAX_Y = 10;
+
+// max Y position (m) that a focused source can be in front of the array
+MIN_Y = -3;
+
+// Max X co-ordinate (m)
+MAX_X = 2.25;
+
 // Number of speakers in the array.
 N_SPEAKERS = 16;
 
