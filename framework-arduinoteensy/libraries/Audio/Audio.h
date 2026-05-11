@@ -109,6 +109,7 @@
 #include "output_dacs.h"
 #include "output_i2s.h"
 #include "output_i2s2.h"
+#include "output_i2s_ananas.h"
 #include "output_i2s_quad.h"
 #include "output_i2s_hex.h"
 #include "output_i2s_oct.h"

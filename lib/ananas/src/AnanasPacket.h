@@ -3,7 +3,6 @@
 
 #include "AnanasUtils.h"
 #include <SystemUtils.h>
-#include <qnethernet/driver_select.h>
 
 namespace ananas
 {
@@ -17,6 +16,7 @@ namespace ananas
 #pragma pack(push, 1)
         struct Header
         {
+            uint16_t sequenceNumber;
             NanoTime time;
             uint8_t numChannels;
             uint16_t numFrames;

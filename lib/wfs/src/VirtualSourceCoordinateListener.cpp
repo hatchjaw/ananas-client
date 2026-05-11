@@ -6,7 +6,7 @@
 namespace ananas::WFS
 {
     VirtualSourceCoordinateListener::VirtualSourceCoordinateListener(ControlContext &controlContext)
-        : MulticastListenerSocket(Constants::WFSControlSocketParams),
+        : MulticastListenerSocket(Constants::VirtualSourceControlSocketParams),
           context(controlContext)
     {
     }

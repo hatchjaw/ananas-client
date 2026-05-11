@@ -1,9 +1,9 @@
-#ifndef ANANASCLIENT_H
-#define ANANASCLIENT_H
+#ifndef ANANASCLIENTTAL_H
+#define ANANASCLIENTTAL_H
 
+#include <Audio.h>
 #include "AnanasPacket.h"
 #include "AnanasPacketBuffer.h"
-#include <AudioProcessor.h>
 #include <ProgramComponent.h>
 #include <NetworkProcessor.h>
 #include <Announcer.h>
@@ -11,25 +11,20 @@
 
 namespace ananas
 {
-    class AudioClient final : public MulticastListenerSocket,
-                              public AudioProcessor,
-                              public ProgramComponent
+    class AudioClientTAL final : public MulticastListenerSocket,
+                                 public AudioStream,
+                                 public ProgramComponent
     {
-    protected:
-        void beginImpl() override;
-
     public:
-        explicit AudioClient(const SocketParams &p, SystemUtils::LogLevel logLevel = SystemUtils::LogLevel::None);
-
-        void run() override;
+        explicit AudioClientTAL(const SocketParams &p, SystemUtils::LogLevel logLevel = SystemUtils::LogLevel::None);
 
         void connect() override;
 
-        void adjustBufferReadIndex(NanoTime ptpNow);
-
-        void prepare(uint sampleRate) override;
+        void run() override;
 
         size_t printTo(Print &p) const override;
+
+        void setPercentCPU(float percentCPU);
 
         void setFirmwareType(SystemUtils::FirmwareType firmwareType);
 
@@ -39,16 +34,12 @@ namespace ananas
 
         void setAudioPtpOffsetNs(int32_t offset);
 
-        void setPercentCPU(float percentage);
-
         void setSecondarySourceCoordinates(float ss0x, float ss0y, float ss1x, float ss1y);
 
-        [[nodiscard]] size_t getNumInputs() const override { return 0; }
-
-        [[nodiscard]] size_t getNumOutputs() const override { return Constants::MaxChannels; }
+        void adjustBufferReadIndex(int64_t ptpNow);
 
     protected:
-        void processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t numFrames) override;
+        void beginImpl() override;
 
     private:
         class RebootListener final : public MulticastListenerSocket,
@@ -65,12 +56,16 @@ namespace ananas
             size_t printTo(Print &p) const override;
         };
 
+        void update() override;
+
         AudioPacket rxPacket{};
         PacketBuffer packetBuffer;
+        DMAMEM static inline int16_t audioBlockData[Constants::MaxChannels][Constants::AudioBlockFrames]{};
+        int16_t *audioBlock[Constants::MaxChannels]{};
 
         uint32_t nWrite{0}, nRead{0};
         NanoTime prevTime{0}, totalTime{0};
-        uint32_t sampleRate{0};
+        uint32_t sampleRate{Constants::AudioSamplingRate};
 
         bool mute{false};
         uint16_t numPacketBufferReadIndexAdjustments{0};
@@ -83,4 +78,5 @@ namespace ananas
     };
 }
 
-#endif //ANANASCLIENT_H
+
+#endif //ANANASCLIENTTAL_H

@@ -1,26 +1,24 @@
-#include "AnanasClient.h"
-#include "AnanasPacketBuffer.h"
-#include "AnanasUtils.h"
-#include <QNEthernet.h>
-#include <SystemUtils.h>
+#include "AnanasClientTAL.h"
 
 namespace ananas
 {
-    AudioClient::AudioClient(const SocketParams &p, SystemUtils::LogLevel logLevel)
+    AudioClientTAL::AudioClientTAL(const SocketParams &p, const SystemUtils::LogLevel logLevel)
         : MulticastListenerSocket(p),
+          AudioStream(Constants::MaxChannels, new audio_block_t *[Constants::MaxChannels]),
           announcer(Constants::ClientAnnounceSocketParams),
           rebootListener(Constants::RebootSocketParams),
           logging(logLevel)
     {
     }
 
-    void AudioClient::beginImpl()
+    void AudioClientTAL::connect()
     {
-        announcer.txPacket.firmwareVersion = SystemUtils::getFirmwareVersion();
-        announcer.begin();
+        MulticastListenerSocket::connect();
+        announcer.connect();
+        rebootListener.connect();
     }
 
-    void AudioClient::run()
+    void AudioClientTAL::run()
     {
         uint32_t cycles = ARM_DWT_CYCCNT;
 
@@ -43,7 +41,7 @@ namespace ananas
                     prevTime = ns;
                 }
 
-                announcer.txPacket.bufferFillPercent = announcer.txPacket.ptpLock ? packetBuffer.getFillPercent() : 50;
+                announcer.txPacket.bufferFillPercent = packetBuffer.getFillPercent();
             } else break;
         }
 
@@ -57,25 +55,12 @@ namespace ananas
         }
     }
 
-    void AudioClient::connect()
+    size_t AudioClientTAL::printTo(Print &p) const
     {
-        MulticastListenerSocket::connect();
-        announcer.connect();
-        rebootListener.connect();
-    }
-
-    void AudioClient::prepare(const uint sampleRate)
-    {
-        this->sampleRate = sampleRate;
-        packetBuffer.clear();
-    }
-
-    size_t AudioClient::printTo(Print &p) const
-    {
-        return p.print("Ananas Client:     ") + AudioProcessor::printTo(p) +
-               p.printf("  ENET %% CPU: %f (max %f)\n",
-                        CYCLES_TO_APPROX_PERCENT(currEnetCyc),
-                        CYCLES_TO_APPROX_PERCENT(maxEnetCyc)
+        return p.print("Ananas Client:")
+               + p.printf("  ENET %% CPU: %f (max %f)\n",
+                          CYCLES_TO_APPROX_PERCENT(currEnetCyc),
+                          CYCLES_TO_APPROX_PERCENT(maxEnetCyc)
                )
                + (nWrite < Constants::ClientReportThresholdPackets
                       ? p.printf("  Packets received: %" PRIu32 "\n", nWrite)
@@ -90,33 +75,38 @@ namespace ananas
                           numPacketBufferReadIndexAdjustments);
     }
 
-    void AudioClient::setFirmwareType(const SystemUtils::FirmwareType firmwareType)
+    void AudioClientTAL::setPercentCPU(const float percentCPU)
+    {
+        announcer.txPacket.percentCPU = percentCPU + CYCLES_TO_APPROX_PERCENT(currEnetCyc);
+    }
+
+    void AudioClientTAL::setFirmwareType(SystemUtils::FirmwareType firmwareType)
     {
         announcer.txPacket.firmwareType = firmwareType;
     }
 
-    void AudioClient::setReportedSamplingRate(const double samplingRate)
+    void AudioClientTAL::setReportedSamplingRate(const double samplingRate)
     {
         announcer.txPacket.samplingRate = samplingRate;
     }
 
-    void AudioClient::setIsPtpLocked(const bool ptpLock)
+    void AudioClientTAL::setIsPtpLocked(const bool ptpLock)
     {
         announcer.txPacket.ptpLock = ptpLock;
     }
 
-    void AudioClient::setAudioPtpOffsetNs(const int32_t offset)
+    void AudioClientTAL::setAudioPtpOffsetNs(const int32_t offset)
     {
         announcer.txPacket.audioPtpOffsetNs = offset;
         announcer.txPacket.presentationOffsetFrame = (announcer.txPacket.presentationOffsetNs + offset) / static_cast<int64_t>(1e9 / sampleRate);
     }
 
-    void AudioClient::setPercentCPU(const float percentage)
-    {
-        announcer.txPacket.percentCPU = percentage;
-    }
-
-    void AudioClient::setSecondarySourceCoordinates(const float ss0x, const float ss0y, const float ss1x, const float ss1y)
+    void AudioClientTAL::setSecondarySourceCoordinates(
+        const float ss0x,
+        const float ss0y,
+        const float ss1x,
+        const float ss1y
+    )
     {
         announcer.txPacket.secondarySource0x = ss0x;
         announcer.txPacket.secondarySource0y = ss0y;
@@ -124,31 +114,7 @@ namespace ananas
         announcer.txPacket.secondarySource1y = ss1y;
     }
 
-    void AudioClient::processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t numFrames)
-    {
-        if (mute) {
-            for (size_t channel{0}; channel < getNumOutputs(); ++channel) {
-                memset(outputBuffer[channel], 0, sizeof(int16_t) * numFrames);
-            }
-            return;
-        }
-
-        size_t processFrame{0};
-        while (processFrame < numFrames) {
-            auto packet{packetBuffer.read()};
-
-            const size_t numChannels{min(packet.header.numChannels, getNumOutputs())};
-            const auto audioData{packet.audio()};
-
-            for (size_t packetFrame{0}; packetFrame < packet.header.numFrames; ++packetFrame, ++processFrame) {
-                for (size_t channel{0}; channel < numChannels; ++channel) {
-                    outputBuffer[channel][processFrame] = audioData[packetFrame * numChannels + channel];
-                }
-            }
-        }
-    }
-
-    void AudioClient::adjustBufferReadIndex(const NanoTime ptpNow)
+    void AudioClientTAL::adjustBufferReadIndex(int64_t ptpNow)
     {
         auto didAdjust{false};
 
@@ -196,18 +162,77 @@ namespace ananas
         announcer.txPacket.presentationOffsetNs = diff;
     }
 
+    void AudioClientTAL::beginImpl()
+    {
+        announcer.txPacket.firmwareVersion = SystemUtils::getFirmwareVersion();
+        announcer.begin();
+
+        // Set up audioBlock pointer.
+        for (size_t i{0}; i < Constants::MaxChannels; ++i) {
+            audioBlock[i] = audioBlockData[i];
+        }
+        // Clear buffer.
+        memset(audioBlockData, 0, sizeof(audioBlockData));
+    }
+
+    void AudioClientTAL::update()
+    {
+        audio_block_t *outBlock[Constants::MaxChannels];
+        constexpr auto channelFrameSize{Constants::AudioBlockFrames * sizeof(int16_t)};
+
+        if (mute) {
+            for (size_t ch{0}; ch < Constants::MaxChannels; ++ch) {
+                outBlock[ch] = allocate();
+                if (outBlock[ch]) {
+                    memset(outBlock[ch]->data, 0, channelFrameSize);
+
+                    // Finish up.
+                    transmit(outBlock[ch], ch);
+                    release(outBlock[ch]);
+                }
+            }
+            return;
+        }
+
+        size_t processFrame{0};
+        while (processFrame < Constants::AudioBlockFrames) {
+            auto packet{packetBuffer.read()};
+
+            const size_t numChannels{min(packet.header.numChannels, Constants::MaxChannels)};
+            const auto audioData{packet.audio()};
+
+            for (size_t packetFrame{0}; packetFrame < packet.header.numFrames; ++packetFrame, ++processFrame) {
+                for (size_t channel{0}; channel < numChannels; ++channel) {
+                    audioBlock[channel][processFrame] = audioData[packetFrame * numChannels + channel];
+                }
+            }
+        }
+
+        for (size_t ch{0}; ch < Constants::MaxChannels; ++ch) {
+            outBlock[ch] = allocate();
+            if (outBlock[ch]) {
+                // Copy the samples to the output block.
+                memcpy(outBlock[ch]->data, audioBlock[ch], channelFrameSize);
+
+                // Finish up.
+                transmit(outBlock[ch], ch);
+                release(outBlock[ch]);
+            }
+        }
+    }
+
     //==========================================================================
 
-    AudioClient::RebootListener::RebootListener(const SocketParams &p)
+    AudioClientTAL::RebootListener::RebootListener(const SocketParams &p)
         : MulticastListenerSocket(p)
     {
     }
 
-    void AudioClient::RebootListener::beginImpl()
+    void AudioClientTAL::RebootListener::beginImpl()
     {
     }
 
-    void AudioClient::RebootListener::run()
+    void AudioClientTAL::RebootListener::run()
     {
         if (const auto size{socket.parsePacket()}; size == 0) {
             Serial.println("Rebooting.");
@@ -215,7 +240,7 @@ namespace ananas
         }
     }
 
-    size_t AudioClient::RebootListener::printTo(Print &p) const
+    size_t AudioClientTAL::RebootListener::printTo(Print &p) const
     {
         return 0;
     }

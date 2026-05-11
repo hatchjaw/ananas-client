@@ -47,24 +47,24 @@ namespace ananas
             49152
         };
 
-        inline static const SocketParams WFSControlSocketParams{
+        inline static const SocketParams VirtualSourceControlSocketParams{
             {224, 4, 224, 5},
             49162
         };
 
         inline static const SocketParams SecondarySourceControlSocketParams{
             {0, 0, 0, 0},
-            49192
+            49163
         };
 
         inline static const SocketParams RebootSocketParams{
             {224, 4, 224, 5},
-            49163
+            49164
         };
 
         inline static const SocketParams AmbisonicsControlSocketParams{
             {224, 4, 224, 5},
-            49164
+            49165
         };
 
         inline static const AnnounceSocketParams AuthorityAnnounceSocketParams{

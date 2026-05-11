@@ -1,36 +1,82 @@
-#include "AudioSystemManager.h"
-#include <QNEthernet.h>
+#include "output_i2s_ananas.h"
+#include "../../../framework-arduinoteensy/libraries/Audio/memcpy_audio.h"
 #include <AnanasUtils.h>
-#include <SystemUtils.h>
 
-AudioSystemManager::AudioSystemManager(AudioSystemConfig &config)
-    : config(config)
+audio_block_t *AudioOutputI2SAnanas::block_left_1st = NULL;
+audio_block_t *AudioOutputI2SAnanas::block_right_1st = NULL;
+audio_block_t *AudioOutputI2SAnanas::block_left_2nd = NULL;
+audio_block_t *AudioOutputI2SAnanas::block_right_2nd = NULL;
+uint16_t AudioOutputI2SAnanas::block_left_offset = 0;
+uint16_t AudioOutputI2SAnanas::block_right_offset = 0;
+bool AudioOutputI2SAnanas::update_responsibility = false;
+DMAChannel AudioOutputI2SAnanas::dma(false);
+DMAMEM __attribute__((aligned(32))) static uint32_t i2s_tx_buffer[AUDIO_BLOCK_SAMPLES];
+
+AudioOutputI2SAnanas::AudioOutputI2SAnanas(AudioSystemConfig &config)
+    : AudioStream(2, inputQueueArray),
+      config(config),
+      interruptsPerSecond(static_cast<uint16_t>(2 * config.kSamplingRate / config.kBufferSize))
 {
     sInstance = this;
-    interruptsPerSecond = static_cast<uint16_t>(2 * config.kSamplingRate / config.kBufferSize);
 }
 
-FLASHMEM
-void AudioSystemManager::beginImpl()
+void AudioOutputI2SAnanas::run()
 {
+}
+
+void AudioOutputI2SAnanas::update()
+{
+    audio_block_t *block;
+    block = receiveReadOnly(0); // input 0 = left channel
+    if (block) {
+        __disable_irq();
+        if (block_left_1st == NULL) {
+            block_left_1st = block;
+            block_left_offset = 0;
+            __enable_irq();
+        } else if (block_left_2nd == NULL) {
+            block_left_2nd = block;
+            __enable_irq();
+        } else {
+            audio_block_t *tmp = block_left_1st;
+            block_left_1st = block_left_2nd;
+            block_left_2nd = block;
+            block_left_offset = 0;
+            __enable_irq();
+            release(tmp);
+        }
+    }
+    block = receiveReadOnly(1); // input 1 = right channel
+    if (block) {
+        __disable_irq();
+        if (block_right_1st == NULL) {
+            block_right_1st = block;
+            block_right_offset = 0;
+            __enable_irq();
+        } else if (block_right_2nd == NULL) {
+            block_right_2nd = block;
+            __enable_irq();
+        } else {
+            audio_block_t *tmp = block_right_1st;
+            block_right_1st = block_right_2nd;
+            block_right_2nd = block;
+            block_right_offset = 0;
+            __enable_irq();
+            release(tmp);
+        }
+    }
+}
+
+void AudioOutputI2SAnanas::beginImpl()
+{
+    block_left_1st = NULL;
+    block_right_1st = NULL;
+
+    update_responsibility = update_setup();
+
     // Calculate fundamental values for clock dividers.
     clockDividers.calculateCoarse(config.kSamplingRate);
     Serial.print(clockDividers);
-
-    // Set up channel pointers
-    for (size_t i{0}; i < ananas::Constants::MaxChannels; ++i) {
-        inputBuffer[i] = sInputBufferData[i];
-        outputBuffer[i] = sOutputBufferData[i];
-    }
-    // Clear buffers
-    memset(sInputBufferData, 0, sizeof(sInputBufferData));
-    memset(sOutputBufferData, 0, sizeof(sOutputBufferData));
-    memset(audioBuffer, 0, sizeof(audioBuffer));
-
-    // Set up the audio processor.
-    if (audioProcessor) { audioProcessor->prepare(config.kSamplingRate); }
-
-    cycPreReg = ARM_DWT_CYCCNT;
 
     //==========================================================================
     // Reset all registers
@@ -148,31 +194,33 @@ void AudioSystemManager::beginImpl()
     // Set up DMA
     //==========================================================================
     setupDMA();
-
-    //==========================================================================
-    // Set up software interrupt to handle audio processing.
-    //==========================================================================
-    attachInterruptVector(IRQ_SOFTWARE, softwareISR);
-    NVIC_ENABLE_IRQ(IRQ_SOFTWARE);
-    NVIC_SET_PRIORITY(IRQ_SOFTWARE, SystemUtils::IrqPriority::Priority208);
-
-    cycPostStop = ARM_DWT_CYCCNT;
-
-    // With predictability of timing in mind, report setup here, rather than
-    // between calls to set up registers.
-    Serial.println(config);
-    // Serial.printf("Audio interrupt priority: %d\n", NVIC_GET_PRIORITY(sDMA.channel));
-
-    Serial.printf(
-        "=== Audio system setup took %" PRIu32 " cycles (%" PRIu32 " ns).\n",
-        cycPostStop - cycPreReg, ananas::Utils::cyclesToNs(cycPostStop - cycPreReg));
 }
 
-void AudioSystemManager::run()
+bool AudioOutputI2SAnanas::isClockRunning() const
 {
+    return analogAudioPllControlRegister.isClockRunning();
 }
 
-void AudioSystemManager::startClock()
+void AudioOutputI2SAnanas::setupDMA()
+{
+    dma.begin(true);
+    dma.TCD->SADDR = i2s_tx_buffer;
+    dma.TCD->SOFF = 2;
+    dma.TCD->ATTR = DMA_TCD_ATTR_SSIZE(1) | DMA_TCD_ATTR_DSIZE(1);
+    dma.TCD->NBYTES_MLNO = 2;
+    dma.TCD->SLAST = -sizeof(i2s_tx_buffer);
+    dma.TCD->DOFF = 0;
+    dma.TCD->CITER_ELINKNO = sizeof(i2s_tx_buffer) / 2;
+    dma.TCD->DLASTSGA = 0;
+    dma.TCD->BITER_ELINKNO = sizeof(i2s_tx_buffer) / 2;
+    dma.TCD->CSR = DMA_TCD_CSR_INTHALF | DMA_TCD_CSR_INTMAJOR;
+    dma.TCD->DADDR = (void *) ((uint32_t) &I2S1_TDR0 + 2);
+    dma.triggerAtHardwareEvent(DMAMUX_SOURCE_SAI1_TX);
+    dma.enable();
+    dma.attachInterrupt(isr);
+}
+
+void AudioOutputI2SAnanas::startClock()
 {
     numInterrupts = -1;
     firstInterruptNS = 0;
@@ -192,11 +240,12 @@ void AudioSystemManager::startClock()
 
     setupDMA();
 
+    AudioMemory(32);
     audioShield.enable();
     audioShield.volume(config.volume);
 }
 
-void AudioSystemManager::stopClock()
+void AudioOutputI2SAnanas::stopClock()
 {
     audioShield.volume(0.f);
 
@@ -222,36 +271,7 @@ void AudioSystemManager::stopClock()
     audioPTPOffset = 0;
 }
 
-volatile bool AudioSystemManager::isClockRunning() const
-{
-    return analogAudioPllControlRegister.isClockRunning();
-}
-
-FLASHMEM
-void AudioSystemManager::setAudioProcessor(AudioProcessor *processor)
-{
-    audioProcessor = processor;
-}
-
-size_t AudioSystemManager::printTo(Print &p) const
-{
-    return p.println(config) +
-           p.print(clockDividers) +
-           p.printf("  Audio-PTP offset: %" PRId32 " ns (Accumulated: %" PRId32 " ns)", audioPTPOffset, accumulatedOffset) +
-           p.println();
-}
-
-void AudioSystemManager::onInvalidSamplingRate(const std::function<void()> &callback)
-{
-    invalidSamplingRateCallback = callback;
-}
-
-void AudioSystemManager::onAudioPtpOffsetChanged(const std::function<void(int32_t)> &callback)
-{
-    updateAudioPtpOffsetCallback = callback;
-}
-
-void AudioSystemManager::adjustClock(const double adjust)
+void AudioOutputI2SAnanas::adjustClock(double adjust)
 {
     // Apply PI controller to audio-PTP offset.
     accumulatedOffset += audioPTPOffset;
@@ -276,38 +296,39 @@ void AudioSystemManager::adjustClock(const double adjust)
         Serial.println("Failed to set audio PLL numerator. Rebooting.");
         SystemUtils::reboot();
     }
-    // Serial.printf("Fs update took %" PRIu32 " ns\n", ananas::Utils::cyclesToNs(ARM_DWT_CYCCNT - cycles));
 }
 
-FLASHMEM
-void AudioSystemManager::setupDMA()
+void AudioOutputI2SAnanas::onInvalidSamplingRate(const std::function<void()> &callback)
 {
-    dma.begin(true);
-
-    dma.TCD->SADDR = sI2sTxBuffer; //source address
-    dma.TCD->SOFF = 2; // source buffer address increment per transfer in bytes
-    dma.TCD->ATTR = DMA_TCD_ATTR_SSIZE(1) | DMA_TCD_ATTR_DSIZE(1); // specifies 16 bit source and destination
-    dma.TCD->NBYTES_MLNO = 2; // bytes to transfer for each service request///////////////////////////////////////////////////////////////////
-    dma.TCD->SLAST = -sizeof(sI2sTxBuffer); // last source address adjustment
-    dma.TCD->DOFF = 0; // increments at destination
-    dma.TCD->CITER_ELINKNO = sizeof(sI2sTxBuffer) / 2;
-    dma.TCD->DLASTSGA = 0; // destination address offset
-    dma.TCD->BITER_ELINKNO = sizeof(sI2sTxBuffer) / 2;
-    dma.TCD->CSR = DMA_TCD_CSR_INTHALF | DMA_TCD_CSR_INTMAJOR;
-    // interrupts
-    dma.TCD->DADDR = reinterpret_cast<void *>(reinterpret_cast<uint32_t>(&I2S1_TDR0) + 2); // I2S1 register DMA writes to
-    dma.triggerAtHardwareEvent(DMAMUX_SOURCE_SAI1_TX); // i2s channel that will trigger the DMA transfer when ready for data
-    dma.enable();
-    dma.attachInterrupt(isr, SystemUtils::IrqPriority::Priority16);
+    invalidSamplingRateCallback = callback;
 }
 
-void AudioSystemManager::handleISR()
+void AudioOutputI2SAnanas::onAudioPtpOffsetChanged(const std::function<void(int32_t)> &callback)
+{
+    updateAudioPtpOffsetCallback = callback;
+}
+
+size_t AudioOutputI2SAnanas::printTo(Print &p) const
+{
+    return p.println(config) +
+           p.print(clockDividers) +
+           p.printf("  Audio-PTP offset: %" PRId32 " ns (Accumulated: %" PRId32 " ns)",
+                    audioPTPOffset,
+                    accumulatedOffset) +
+           p.println();
+}
+
+void AudioOutputI2SAnanas::checkAudioPtpOffset()
 {
     if (numInterrupts == -1) {
         numInterrupts = 0;
+        timespec ts{};
+        qindesign::network::EthernetIEEE1588.readTimer(ts);
+        // Get a reference nanosecond figure to use for comparison.
+        if (firstInterruptNS == 0) {
+            firstInterruptNS = ts.tv_nsec;
+        }
         if (config.logging > SystemUtils::LogLevel::None) {
-            timespec ts{};
-            qindesign::network::EthernetIEEE1588.readTimer(ts);
             const auto ns{ts.tv_sec * ClockConstants::NanosecondsPerSecond + ts.tv_nsec};
             Serial.print("First interrupt time: ");
             Utils::printTime(ns);
@@ -320,11 +341,6 @@ void AudioSystemManager::handleISR()
         timespec ts{};
         qindesign::network::EthernetIEEE1588.readTimer(ts);
 
-        // Get a reference nanosecond figure to use for comparison.
-        if (firstInterruptNS == 0) {
-            firstInterruptNS = ts.tv_nsec;
-        }
-
         // Each second, compare the number of nanoseconds with the reference.
         if (ts.tv_nsec < 100'000'000 && firstInterruptNS > 900'000'000) {
             ts.tv_nsec += ananas::Constants::NanosecondsPerSecond;
@@ -335,63 +351,74 @@ void AudioSystemManager::handleISR()
             updateAudioPtpOffsetCallback(audioPTPOffset);
         }
     }
+}
 
-    int16_t *destination, *source;
-    const auto sourceAddress{reinterpret_cast<uint32_t>(dma.TCD->SADDR)};
+void AudioOutputI2SAnanas::isr()
+{
+    if (sInstance) {
+        sInstance->checkAudioPtpOffset();
+    }
+
+    int16_t *dest;
+    audio_block_t *blockL, *blockR;
+    uint32_t saddr, offsetL, offsetR;
+
+    saddr = (uint32_t) (dma.TCD->SADDR);
     dma.clearInterrupt();
-
-    if (sourceAddress < reinterpret_cast<uint32_t>(sI2sTxBuffer) + sizeof(sI2sTxBuffer) / 2) {
-        triggerAudioProcessing();
-        // DMA is transmitting the first half of the buffer; fill the second half.
-        destination = reinterpret_cast<int16_t *>(&sI2sTxBuffer[ananas::Constants::AudioBlockFrames / 2]);
-        source = &audioBuffer[ananas::Constants::AudioBlockFrames];
+    if (saddr < (uint32_t) i2s_tx_buffer + sizeof(i2s_tx_buffer) / 2) {
+        // DMA is transmitting the first half of the buffer
+        // so we must fill the second half
+        dest = (int16_t *) &i2s_tx_buffer[AUDIO_BLOCK_SAMPLES / 2];
+        if (update_responsibility) update_all();
     } else {
-        // DMA is transmitting the second half of the buffer; fill the first half.
-        destination = reinterpret_cast<int16_t *>(sI2sTxBuffer);
-        source = audioBuffer;
+        // DMA is transmitting the second half of the buffer
+        // so we must fill the first half
+        dest = (int16_t *) i2s_tx_buffer;
     }
 
-    memcpy(destination, source, ananas::Constants::AudioBlockFrames * sizeof(int16_t));
+    blockL = block_left_1st;
+    blockR = block_right_1st;
+    offsetL = block_left_offset;
+    offsetR = block_right_offset;
 
-    arm_dcache_flush_delete(destination, sizeof(sI2sTxBuffer) / 2);
-}
-
-void AudioSystemManager::isr()
-{
-    if (sInstance) {
-        sInstance->handleISR();
+    if (blockL && blockR) {
+        memcpy_tointerleaveLR(dest, blockL->data + offsetL, blockR->data + offsetR);
+        offsetL += AUDIO_BLOCK_SAMPLES / 2;
+        offsetR += AUDIO_BLOCK_SAMPLES / 2;
+    } else if (blockL) {
+        memcpy_tointerleaveL(dest, blockL->data + offsetL);
+        offsetL += AUDIO_BLOCK_SAMPLES / 2;
+    } else if (blockR) {
+        memcpy_tointerleaveR(dest, blockR->data + offsetR);
+        offsetR += AUDIO_BLOCK_SAMPLES / 2;
+    } else {
+        memset(dest, 0,AUDIO_BLOCK_SAMPLES * 2);
     }
-}
 
-void AudioSystemManager::triggerAudioProcessing()
-{
-    NVIC_SET_PENDING(IRQ_SOFTWARE);
-}
+    arm_dcache_flush_delete(dest, sizeof(i2s_tx_buffer) / 2);
 
-void AudioSystemManager::handleSoftwareISR()
-{
-    if (!audioProcessor) return;
-
-    audioProcessor->processAudio(inputBuffer, outputBuffer, ananas::Constants::AudioBlockFrames);
-
-    for (size_t frame{0}; frame < ananas::Constants::AudioBlockFrames; ++frame) {
-        for (size_t ch{0}; ch < 2; ++ch) {
-            audioBuffer[frame * 2 + ch] = outputBuffer[ch][frame];
-        }
+    if (offsetL < AUDIO_BLOCK_SAMPLES) {
+        block_left_offset = offsetL;
+    } else {
+        block_left_offset = 0;
+        release(blockL);
+        block_left_1st = block_left_2nd;
+        block_left_2nd = NULL;
     }
-}
-
-void AudioSystemManager::softwareISR()
-{
-    if (sInstance) {
-        sInstance->handleSoftwareISR();
+    if (offsetR < AUDIO_BLOCK_SAMPLES) {
+        block_right_offset = offsetR;
+    } else {
+        block_right_offset = 0;
+        release(blockR);
+        block_right_1st = block_right_2nd;
+        block_right_2nd = NULL;
     }
 }
 
 //==============================================================================
 
 FLASHMEM
-void AudioSystemManager::ClockDividers::calculateCoarse(const uint32_t targetSamplingRate)
+void AudioOutputI2SAnanas::ClockDividers::calculateCoarse(const uint32_t targetSamplingRate)
 {
     constexpr auto orderOfMagnitude{1e6};
 
@@ -450,7 +477,7 @@ void AudioSystemManager::ClockDividers::calculateCoarse(const uint32_t targetSam
     }
 }
 
-bool AudioSystemManager::ClockDividers::calculateFine(const double targetSamplingRate)
+bool AudioOutputI2SAnanas::ClockDividers::calculateFine(const double targetSamplingRate)
 {
     constexpr auto orderOfMagnitude{1e6};
 
@@ -470,7 +497,7 @@ bool AudioSystemManager::ClockDividers::calculateFine(const double targetSamplin
     return true;
 }
 
-size_t AudioSystemManager::ClockDividers::printTo(Print &p) const
+size_t AudioOutputI2SAnanas::ClockDividers::printTo(Print &p) const
 {
     return p.printf("  PLL4 DIV: %" PRIu8
                     ", NUM: %" PRId32
@@ -486,47 +513,47 @@ size_t AudioSystemManager::ClockDividers::printTo(Print &p) const
 }
 
 FLASHMEM
-bool AudioSystemManager::ClockDividers::isPll4FreqValid() const
+bool AudioOutputI2SAnanas::ClockDividers::isPll4FreqValid() const
 {
     const auto pll4Freq{getPll4Freq()};
     return pll4Freq > ClockConstants::Pll4FreqMin && pll4Freq < ClockConstants::Pll4FreqMax;
 }
 
 FLASHMEM
-bool AudioSystemManager::ClockDividers::isSai1PostFreqValid() const
+bool AudioOutputI2SAnanas::ClockDividers::isSai1PostFreqValid() const
 {
     const auto sai1PostFreq{static_cast<uint32_t>(static_cast<double>(getPll4Freq()) / sai1Pre)};
     return sai1PostFreq <= ClockConstants::Sai1PostMaxFreq;
 }
 
 FLASHMEM
-uint32_t AudioSystemManager::ClockDividers::getPll4Freq() const
+uint32_t AudioOutputI2SAnanas::ClockDividers::getPll4Freq() const
 {
     const auto result{ClockConstants::OscHz * getPLL4FractionalDivider()};
     return static_cast<uint32_t>(result);
 }
 
 FLASHMEM
-double AudioSystemManager::ClockDividers::getCurrentSamplingRate() const
+double AudioOutputI2SAnanas::ClockDividers::getCurrentSamplingRate() const
 {
     return ClockConstants::CyclesPerWord * getPLL4FractionalDivider() / (sai1Pre * sai1Post);
 }
 
 FLASHMEM
-double AudioSystemManager::ClockDividers::getPLL4FractionalDivider() const
+double AudioOutputI2SAnanas::ClockDividers::getPLL4FractionalDivider() const
 {
     return pll4Div + static_cast<double>(pll4Num) / pll4Denom;
 }
 
 FLASHMEM
-uint32_t AudioSystemManager::ClockDividers::getCurrentMaxPossibleSamplingRate() const
+uint32_t AudioOutputI2SAnanas::ClockDividers::getCurrentMaxPossibleSamplingRate() const
 {
     const auto result{ClockConstants::CyclesPerWord * (pll4Div + 1) / (sai1Pre * sai1Post)};
     return static_cast<uint32_t>(result);
 }
 
 FLASHMEM
-uint32_t AudioSystemManager::ClockDividers::getCurrentSai1ClkRootFreq() const
+uint32_t AudioOutputI2SAnanas::ClockDividers::getCurrentSai1ClkRootFreq() const
 {
     const auto result{(ClockConstants::OscHz * getPLL4FractionalDivider() / (sai1Pre * sai1Post))};
     return static_cast<uint32_t>(result);
