@@ -10999,19 +10999,19 @@ passthrough::passthrough()
     fDSP = new mydsp();
 #endif
 
-//    // allocating Faust inputs
-//    if (fDSP->getNumInputs() > 0) {
-//        fInChannel = new float *[fDSP->getNumInputs()];
-//    } else {
-//        fInChannel = nullptr;
-//    }
-//
-//    // allocating Faust outputs
-//    if (fDSP->getNumOutputs() > 0) {
-//        fOutChannel = new float *[fDSP->getNumOutputs()];
-//    } else {
-//        fOutChannel = nullptr;
-//    }
+    // allocating Faust inputs
+    if (fDSP->getNumInputs() > 0) {
+        fInChannel = new float *[fDSP->getNumInputs()];
+    } else {
+        fInChannel = nullptr;
+    }
+
+    // allocating Faust outputs
+    if (fDSP->getNumOutputs() > 0) {
+        fOutChannel = new float *[fDSP->getNumOutputs()];
+    } else {
+        fOutChannel = nullptr;
+    }
 
     fUI = new MapUI();
 
@@ -11025,14 +11025,14 @@ passthrough::~passthrough()
 {
     delete fDSP;
     delete fUI;
-//    for (int i = 0; i < fDSP->getNumInputs(); i++) {
-//        delete[] fInChannel[i];
-//    }
-//    delete [] fInChannel;
-//    for (int i = 0; i < fDSP->getNumOutputs(); i++) {
-//        delete[] fOutChannel[i];
-//    }
-//    delete [] fOutChannel;
+    for (int i = 0; i < fDSP->getNumInputs(); i++) {
+        delete[] fInChannel[i];
+    }
+    delete [] fInChannel;
+    for (int i = 0; i < fDSP->getNumOutputs(); i++) {
+        delete[] fOutChannel[i];
+    }
+    delete [] fOutChannel;
 #if MIDICTRL
     delete fMIDIInterface;
     delete fMIDIHandler;
@@ -11044,29 +11044,29 @@ void passthrough::prepare(const uint sampleRate)
     fDSP->init(static_cast<int>(sampleRate));
     fDSP->buildUserInterface(fUI);
 
-//    Serial.println("Setting up channel pointers.");
-    // Set up channel pointers
-    for (size_t i{0}; i < ananas::Constants::MaxChannels; ++i) {
-        fInChannel[i] = fInChannelData[i];
-    }
-    for (size_t i{0}; i < ananas::Constants::NumOutputChannels; ++i) {
-        fOutChannel[i] = fOutChannelData[i];
-    }
-//    Serial.println("Done setting up channel pointers.");
+////    Serial.println("Setting up channel pointers.");
+//    // Set up channel pointers
+//    for (size_t i{0}; i < ananas::Constants::MaxChannels; ++i) {
+//        fInChannel[i] = fInChannelData[i];
+//    }
+//    for (size_t i{0}; i < ananas::Constants::NumOutputChannels; ++i) {
+//        fOutChannel[i] = fOutChannelData[i];
+//    }
+////    Serial.println("Done setting up channel pointers.");
 
-//    // allocating Faust inputs
-//    if (fDSP->getNumInputs() > 0) {
-//        for (int i = 0; i < fDSP->getNumInputs(); i++) {
-//            fInChannel[i] = new float[ananas::Constants::AudioBlockFrames];
-//        }
-//    }
-//
-//    // allocating Faust outputs
-//    if (fDSP->getNumOutputs() > 0) {
-//        for (int i = 0; i < fDSP->getNumOutputs(); i++) {
-//            fOutChannel[i] = new float[ananas::Constants::AudioBlockFrames];
-//        }
-//    }
+    // allocating Faust inputs
+    if (fDSP->getNumInputs() > 0) {
+        for (int i = 0; i < fDSP->getNumInputs(); i++) {
+            fInChannel[i] = new float[ananas::Constants::AudioBlockFrames];
+        }
+    }
+
+    // allocating Faust outputs
+    if (fDSP->getNumOutputs() > 0) {
+        for (int i = 0; i < fDSP->getNumOutputs(); i++) {
+            fOutChannel[i] = new float[ananas::Constants::AudioBlockFrames];
+        }
+    }
 
 #if MIDICTRL
     fDSP->buildUserInterface(fMIDIInterface);
@@ -11113,8 +11113,11 @@ size_t passthrough::printTo(Print &p) const
 {
     return p.print("passthrough:               ") +
          AudioProcessor::printTo(p) +
-         p.printf("  Module ID: %d\n",
-                  static_cast<int>(fUI->getParamValue("moduleID")));
+         p.printf("  Secondary source co-ordinates: (%f, %f), (%f, %f)\n",
+                  fUI->getParamValue("ss/0/x"),
+                  fUI->getParamValue("ss/0/y"),
+                  fUI->getParamValue("ss/1/x"),
+                  fUI->getParamValue("ss/1/y"));
 }
 
 size_t passthrough::getNumInputs() const

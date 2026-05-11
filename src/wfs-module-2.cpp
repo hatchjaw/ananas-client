@@ -1,52 +1,46 @@
-#include <AudioSystemManager.h>
-#include <AnanasClient.h>
-#include <wfs.h>
+#include <Audio.h>
+#include <AnanasClientTAL.h>
 #include <SecondarySourceCoordinateListener.h>
 #include <VirtualSourceCoordinateListener.h>
 #include <EthernetManager.h>
 #include <PTPSubscriber.h>
 #include <ComponentManager.h>
-
-#include "audio_processors/DistributedWFSProcessor.h"
+#include <wfs2.h>
 
 using namespace ananas::WFS;
 
-extern "C" uint8_t external_psram_size;
-
-SystemUtils::LogLevel logLevel{SystemUtils::LogLevel::None};
+SystemUtils::LogLevel logLevel{SystemUtils::LogLevel::Medium};
 AudioSystemConfig config{
     ananas::Constants::AudioBlockFrames,
     ananas::Constants::AudioSamplingRate
 };
-AudioSystemManager audioSystemManager{config};
 PTPSubscriber ptpSubscriber{
     Constants::PTPEventSocketParams,
     Constants::PTPGeneralSocketParams,
     SystemUtils::LogLevel::None
 };
-ananas::AudioClient ananasClient{
-    ananas::Constants::AudioSocketParams,
-    logLevel
-};
 ControlContext context;
 VirtualSourceCoordinateListener vsListener{context};
 SecondarySourceCoordinateListener ssListener{context};
-wfs wfs;
-WFSModule wfsModule{ananasClient, wfs, context};
+ananas::AudioClientTAL ananasClient{
+    ananas::Constants::AudioSocketParams,
+    logLevel
+};
+wfs2 wfs;
+AudioOutputI2SAnanas i2s{config};
+std::vector<std::unique_ptr<AudioConnection> > patchCords;
 std::vector<NetworkProcessor *> networkProcessors{
     &ptpSubscriber,
     &ananasClient,
     &vsListener,
     &ssListener
 };
-EthernetManager ethernetManager{"t41wfsmodule", networkProcessors};
+EthernetManager ethernetManager{"t41wfsmodule2", networkProcessors};
 std::vector<ProgramComponent *> programComponents{
     &ethernetManager,
     &ptpSubscriber,
-    &audioSystemManager,
+    &i2s,
     &ananasClient,
-    &wfs,
-    &wfsModule,
     &vsListener,
     &ssListener
 };
@@ -57,12 +51,21 @@ ComponentManager componentManager{
 
 void setup()
 {
-#ifdef WAIT_FOR_SERIAL
+    #ifdef WAIT_FOR_SERIAL
     while (!Serial) {
     }
 #endif
 
     Serial.begin(0);
+
+    for (size_t i{0}; i < ananas::Constants::MaxChannels; ++i) {
+        // Network inputs to WFS inputs.
+        patchCords.push_back(std::make_unique<AudioConnection>(ananasClient, i, wfs, i));
+    }
+
+    // WFS outputs to I2S outputs.
+    patchCords.push_back(std::make_unique<AudioConnection>(wfs, 0, i2s, 0));
+    patchCords.push_back(std::make_unique<AudioConnection>(wfs, 1, i2s, 1));
 
     ananasClient.setFirmwareType(SystemUtils::FirmwareType::wfsModule);
 
@@ -70,28 +73,28 @@ void setup()
     {
         ananasClient.setIsPtpLocked(isLocked);
 
-        if (isLocked && !audioSystemManager.isClockRunning()) {
-            audioSystemManager.startClock();
+        if (isLocked && !i2s.isClockRunning()) {
+            i2s.startClock();
             if (logLevel > SystemUtils::LogLevel::None) Serial.println("Subscriber start audio clock.");
-        } else if (audioSystemManager.isClockRunning()) {
+        } else if (i2s.isClockRunning()) {
             ananasClient.adjustBufferReadIndex(now);
         }
     });
 
     ptpSubscriber.onControllerUpdated([](const double adjust)
     {
-        audioSystemManager.adjustClock(adjust);
+        i2s.adjustClock(adjust);
         ananasClient.setReportedSamplingRate(config.getExactSamplingRate());
     });
 
-    audioSystemManager.onInvalidSamplingRate([]
+    i2s.onInvalidSamplingRate([]
     {
         Serial.printf("Resetting PTP and stopping audio.\n");
         ptpSubscriber.reset();
-        audioSystemManager.stopClock();
+        i2s.stopClock();
     });
 
-    audioSystemManager.onAudioPtpOffsetChanged([](const int32_t offset)
+    i2s.onAudioPtpOffsetChanged([](const int32_t offset)
     {
         ananasClient.setAudioPtpOffsetNs(offset);
     });
@@ -156,8 +159,6 @@ void setup()
     }
 #endif
 
-    audioSystemManager.setAudioProcessor(&wfsModule);
-
     componentManager.begin();
 }
 
@@ -165,5 +166,5 @@ void loop()
 {
     componentManager.run();
 
-    ananasClient.setPercentCPU(wfsModule.getCurrentPercentCPU());
+    ananasClient.setPercentCPU(AudioProcessorUsage());
 }

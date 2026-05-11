@@ -38,7 +38,7 @@ protected:
     void processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t const numFrames) override
     {
         client.processAudio(inputBuffer, outputBuffer, numFrames);
-        // passthrough.processAudio(outputBuffer, outputBuffer, numFrames);
+        passthrough.processAudio(outputBuffer, outputBuffer, numFrames);
     }
 
     void beginImpl() override

@@ -1,0 +1,142 @@
+#ifndef OUTPUT_I2S_ANANAS_H
+#define OUTPUT_I2S_ANANAS_H
+
+#include <Arduino.h>
+#include <AudioStream.h>
+#include <DMAChannel.h>
+#include <ProgramComponent.h>
+
+#include "AudioSystemConfig.h"
+#include "SGTL5000.h"
+#include "registers/AnalogAudioPllControlRegister.h"
+#include "registers/ClockDividerRegister1.h"
+#include "registers/ClockGatingRegister5.h"
+#include "registers/GeneralPurposeRegister1.h"
+#include "registers/MiscellaneousRegister2.h"
+#include "registers/SAI1.h"
+#include "registers/SerialClockMultiplexerRegister1.h"
+#include "registers/SwMuxControlRegister.h"
+
+class AudioOutputI2SAnanas : public AudioStream, public ProgramComponent
+{
+public:
+    void run() override;
+
+    explicit AudioOutputI2SAnanas(AudioSystemConfig &config);
+
+    void update() override;
+
+    void beginImpl() override;
+
+    bool isClockRunning() const;
+
+    void setupDMA();
+
+    void startClock();
+
+    void stopClock();
+
+    void adjustClock(double adjust);
+
+    void onInvalidSamplingRate(const std::function<void()> &callback);
+
+    void onAudioPtpOffsetChanged(const std::function<void(int32_t)> &callback);
+
+    size_t printTo(Print &p) const override;
+
+protected:
+    static audio_block_t *block_left_1st;
+    static audio_block_t *block_right_1st;
+    static bool update_responsibility;
+    static DMAChannel dma;
+
+    void checkAudioPtpOffset();
+
+    static void isr();
+
+private:
+    struct ClockDividers final : Printable
+    {
+        uint8_t pll4Div{ClockConstants::Pll4DivMin};
+        int32_t pll4Num{0};
+        uint32_t pll4Denom{1};
+        uint8_t sai1Pre{1};
+        uint8_t sai1Post{1};
+        constexpr static auto kAudioPostDiv{MiscellaneousRegister2::AudioPostDiv::DivideBy1};
+        constexpr static auto kPll4PostDiv{AnalogAudioPllControlRegister::PostDivSelect::DivideBy1};
+
+        size_t printTo(Print &p) const override;
+
+        void calculateCoarse(uint32_t targetSamplingRate);
+
+        bool calculateFine(double targetSamplingRate);
+
+    private:
+        double getCurrentSamplingRate() const;
+
+        uint32_t getPll4Freq() const;
+
+        double getPLL4FractionalDivider() const;
+
+        bool isPll4FreqValid() const;
+
+        bool isSai1PostFreqValid() const;
+
+        uint32_t getCurrentMaxPossibleSamplingRate() const;
+
+        uint32_t getCurrentSai1ClkRootFreq() const;
+    };
+
+    static inline AudioOutputI2SAnanas *sInstance{nullptr};
+
+    static audio_block_t *block_left_2nd;
+    static audio_block_t *block_right_2nd;
+    static uint16_t block_left_offset;
+    static uint16_t block_right_offset;
+    audio_block_t *inputQueueArray[2];
+
+    AudioSystemConfig &config;
+    ClockDividers clockDividers;
+
+    AnalogAudioPllControlRegister analogAudioPllControlRegister;
+    AudioPllNumeratorRegister audioPllNumeratorRegister;
+    AudioPllDenominatorRegister audioPllDenominatorRegister;
+    ClockDividerRegister1 clockDividerRegister1;
+    SerialClockMultiplexerRegister1 serialClockMultiplexerRegister1;
+    MiscellaneousRegister2 miscellaneousRegister2;
+    ClockGatingRegister5 clockGatingRegister5;
+    GeneralPurposeRegister1 generalPurposeRegister1;
+    Pin7SwMuxControlRegister pin7SwMuxControlRegister;
+    Pin20SwMuxControlRegister pin20SwMuxControlRegister;
+    Pin21SwMuxControlRegister pin21SwMuxControlRegister;
+    Pin23SwMuxControlRegister pin23SwMuxControlRegister;
+    SAI1TransmitControlRegister sai1TransmitControlRegister;
+    SAI1TransmitConfig1Register sai1TransmitConfig1Register;
+    SAI1TransmitConfig2Register sai1TransmitConfig2Register;
+    SAI1TransmitConfig3Register sai1TransmitConfig3Register;
+    SAI1TransmitConfig4Register sai1TransmitConfig4Register;
+    SAI1TransmitConfig5Register sai1TransmitConfig5Register;
+    SAI1TransmitMaskRegister sai1TransmitMaskRegister;
+    SAI1ReceiveControlRegister sai1ReceiveControlRegister;
+    SAI1ReceiveConfig1Register sai1ReceiveConfig1Register;
+    SAI1ReceiveConfig2Register sai1ReceiveConfig2Register;
+    SAI1ReceiveConfig3Register sai1ReceiveConfig3Register;
+    SAI1ReceiveConfig4Register sai1ReceiveConfig4Register;
+    SAI1ReceiveConfig5Register sai1ReceiveConfig5Register;
+    SAI1ReceiveMaskRegister sai1ReceiveMaskRegister;
+
+    SGTL5000 audioShield;
+
+    std::function<void()> invalidSamplingRateCallback{nullptr};
+    std::function<void(int32_t)> updateAudioPtpOffsetCallback{nullptr};
+
+    int32_t interruptsPerSecond{0};
+    int32_t numInterrupts{-1};
+    int32_t firstInterruptNS{0};
+    int32_t audioPTPOffset{0};
+    int32_t accumulatedOffset{0};
+    static constexpr int32_t MaxAccumulatedOffset{100'000};
+    static constexpr double KP{.1}, KI{.01};
+};
+
+#endif //OUTPUT_I2S_ANANAS_H

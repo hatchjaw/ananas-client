@@ -23,7 +23,7 @@ private:
 
     uint8_t mac[6]{};
     IPAddress staticIP{192, 168, 10, 255};
-    IPAddress subnetMask{255, 255, 255, 0};
+    IPAddress subnetMask{255, 255, 0, 0};
     IPAddress gateway{192, 168, 10, 1};
     const char *hostName;
 };

@@ -2,12 +2,6 @@
 CELERITY = 343;
 
 // max Y distance (m) that a virtual source can be behind the speaker array
-MAX_Y_DIST = 10;
-
-// max Y position (m) that a focused source can be in front of the array
-MIN_Y_DIST = -3;
-
-// max Y distance (m) that a virtual source can be behind the speaker array
 MAX_Y = 10;
 
 // max Y position (m) that a focused source can be in front of the array
@@ -16,15 +10,8 @@ MIN_Y = -3;
 // Max X co-ordinate (m)
 MAX_X = 2.25;
 
-// Number of speakers in the array.
-N_SPEAKERS = 16;
-
 // Each module (Teensy) controls two speakers.
 SPEAKERS_PER_MODULE = 2;
 
 // Number of sound sources
 N_SOURCES = 16;
-
-// Max speaker spacing; determines maximum delay line lengths.
-// This looks to be the maximum for now, based on 16 speakers.
-MAX_SPEAKER_DIST = .3;

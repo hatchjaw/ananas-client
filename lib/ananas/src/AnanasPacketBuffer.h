@@ -16,6 +16,10 @@ namespace ananas
         // That mask requires a power of two buffer size.
         // enum class Operation { Read, Write };
 
+        explicit PacketBuffer(SystemUtils::LogLevel logLevel = SystemUtils::LogLevel::None);
+
+        uint8_t *getWritePointer();
+
         void write(const AudioPacket &packet);
 
         AudioPacket &read();
@@ -24,9 +28,13 @@ namespace ananas
 
         size_t printTo(Print &p) const override;
 
+        void incrementWriteIndex();
+
         void incrementReadIndex();
 
         void decrementReadIndex();
+
+        void decrementWriteIndex();
 
         [[nodiscard]] size_t getReadIndex() const;
 
@@ -41,6 +49,7 @@ namespace ananas
     private:
         size_t writeIndex{0}, readIndex{0};
         AudioPacket buffer[Constants::PacketBufferCapacity] = {};
+        SystemUtils::LogLevel logging;
     };
 } // ananas
 

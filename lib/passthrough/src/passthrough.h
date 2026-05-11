@@ -43,12 +43,12 @@ protected:
     void processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t numFrames) override;
 
 private:
-    DMAMEM inline static float fInChannelData[ananas::Constants::MaxChannels][ananas::Constants::AudioBlockFrames]{};
-    DMAMEM inline static float fOutChannelData[ananas::Constants::NumOutputChannels][ananas::Constants::AudioBlockFrames]{};
-    inline static float *fInChannel[ananas::Constants::MaxChannels]{};
-    inline static float *fOutChannel[ananas::Constants::NumOutputChannels]{};
-//    float **fInChannel;
-//    float **fOutChannel;
+//    DMAMEM inline static float fInChannelData[ananas::Constants::MaxChannels][ananas::Constants::AudioBlockFrames]{};
+//    DMAMEM inline static float fOutChannelData[ananas::Constants::NumOutputChannels][ananas::Constants::AudioBlockFrames]{};
+//    inline static float *fInChannel[ananas::Constants::MaxChannels]{};
+//    inline static float *fOutChannel[ananas::Constants::NumOutputChannels]{};
+    float **fInChannel;
+    float **fOutChannel;
     MapUI *fUI;
 #if MIDICTRL
         ananas_midi* fMIDIHandler;

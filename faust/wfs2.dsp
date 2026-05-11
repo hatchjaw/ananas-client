@@ -24,7 +24,8 @@ with{
     speaker(vsx, vsy, ssx, ssy) = _ <:
         _,prefilter(hyp) : select2(vsy > 0) :
 //        _,_ : select2(vsy > 0) :
-        (fsDelay,vsDelay : select2(vsy > 0)),_ : de.fdelay(maxHyp * samplesPerMeter)
+        (fsDelay,vsDelay : select2(vsy > 0)),_ :
+        de.fdelay(maxHyp * samplesPerMeter)
     with{
         maxHyp = MIN_Y^2 + (2 * MAX_X)^2 : sqrt;
 
