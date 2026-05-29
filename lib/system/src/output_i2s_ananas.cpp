@@ -445,7 +445,7 @@ void AudioOutputI2SAnanas::ClockDividers::calculateCoarse(const uint32_t targetS
                 continue;
             }
 
-            divExact = static_cast<double>(targetSamplingRate) * ClockConstants::AudioWordSize * sai1Pre * sai1Post / ClockConstants::OscMHz;
+            divExact = static_cast<double>(targetSamplingRate) * ClockConstants::OversamplingRatio * sai1Pre * sai1Post / ClockConstants::OscMHz;
 
             if (static_cast<uint8_t>(floor(divExact / orderOfMagnitude)) != pll4Div) {
                 if (sai1Pre < ClockConstants::Sai1PreMax) {
@@ -481,7 +481,7 @@ bool AudioOutputI2SAnanas::ClockDividers::calculateFine(const double targetSampl
 {
     constexpr auto orderOfMagnitude{1e6};
 
-    const auto sai1WordOsc{static_cast<double>(ClockConstants::AudioWordSize) * sai1Pre * sai1Post / ClockConstants::OscMHz};
+    const auto sai1WordOsc{static_cast<double>(ClockConstants::OversamplingRatio) * sai1Pre * sai1Post / ClockConstants::OscMHz};
     const auto num{targetSamplingRate * sai1WordOsc - orderOfMagnitude * pll4Div};
     const auto numInt{static_cast<int32_t>(round(num * (pll4Denom / orderOfMagnitude)))};
 
@@ -536,7 +536,7 @@ uint32_t AudioOutputI2SAnanas::ClockDividers::getPll4Freq() const
 FLASHMEM
 double AudioOutputI2SAnanas::ClockDividers::getCurrentSamplingRate() const
 {
-    return ClockConstants::CyclesPerWord * getPLL4FractionalDivider() / (sai1Pre * sai1Post);
+    return ClockConstants::CyclesPerOversample * getPLL4FractionalDivider() / (sai1Pre * sai1Post);
 }
 
 FLASHMEM
@@ -548,7 +548,7 @@ double AudioOutputI2SAnanas::ClockDividers::getPLL4FractionalDivider() const
 FLASHMEM
 uint32_t AudioOutputI2SAnanas::ClockDividers::getCurrentMaxPossibleSamplingRate() const
 {
-    const auto result{ClockConstants::CyclesPerWord * (pll4Div + 1) / (sai1Pre * sai1Post)};
+    const auto result{ClockConstants::CyclesPerOversample * (pll4Div + 1) / (sai1Pre * sai1Post)};
     return static_cast<uint32_t>(result);
 }
 

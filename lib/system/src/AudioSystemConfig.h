@@ -23,19 +23,20 @@ struct ClockConstants
      */
     static constexpr uint32_t OscHz{OscMHz * MHz};
     /**
-     * SAI1 word size.
+     * SAI1 oversampling ratio.
      * The relationship between the audio sampling rate, F_s, and SAI1_CLK_ROOT,
      * F_i, is:
      *
      * F_s = F_i / 2^8.
      */
-    static constexpr uint32_t AudioWordSize{1 << 8};
+    static constexpr uint32_t OversamplingRatio{1 << 8};
     /**
-     * Ratio of the frequency of the crystal oscillator to the SAI1 word size;
-     * used in various calculations. @see AudioSystemManager::calculateCoarse
-     * and AudioSystemManager::calculateFine.
+     * Ratio of the frequency of the crystal oscillator to the SAI1 oversampling
+     * ratio; used in various calculations.
+     * @see AudioSystemManager::calculateCoarse and
+     * AudioSystemManager::calculateFine.
      */
-    static constexpr double CyclesPerWord{static_cast<double>(OscHz) / AudioWordSize};
+    static constexpr double CyclesPerOversample{static_cast<double>(OscHz) / OversamplingRatio};
     /**
      * Minimum valid value for CCM_ANALOG_PLL_AUDIO.DIV_SELECT (D_S).
      *

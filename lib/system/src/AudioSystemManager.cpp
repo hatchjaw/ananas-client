@@ -418,7 +418,7 @@ void AudioSystemManager::ClockDividers::calculateCoarse(const uint32_t targetSam
                 continue;
             }
 
-            divExact = static_cast<double>(targetSamplingRate) * ClockConstants::AudioWordSize * sai1Pre * sai1Post / ClockConstants::OscMHz;
+            divExact = static_cast<double>(targetSamplingRate) * ClockConstants::OversamplingRatio * sai1Pre * sai1Post / ClockConstants::OscMHz;
 
             if (static_cast<uint8_t>(floor(divExact / orderOfMagnitude)) != pll4Div) {
                 if (sai1Pre < ClockConstants::Sai1PreMax) {
@@ -437,11 +437,7 @@ void AudioSystemManager::ClockDividers::calculateCoarse(const uint32_t targetSam
                 pll4Denom *= 10;
             }
 
-            // TODO: prefer high precision denom, i.e. where num < (1 << 29) - 1
-            if (isPll4FreqValid()
-                //                && getPll4Freq() > (ClockConstants::k_pll4FreqMin + ClockConstants::k_pll4FreqMax) / 2
-                && pll4Denom == 1'000'000'000) {
-                // Serial.println(*this);
+            if (isPll4FreqValid() && pll4Denom == 1'000'000'000) {
                 return;
             } else {
                 break;
@@ -454,7 +450,7 @@ bool AudioSystemManager::ClockDividers::calculateFine(const double targetSamplin
 {
     constexpr auto orderOfMagnitude{1e6};
 
-    const auto sai1WordOsc{static_cast<double>(ClockConstants::AudioWordSize) * sai1Pre * sai1Post / ClockConstants::OscMHz};
+    const auto sai1WordOsc{static_cast<double>(ClockConstants::OversamplingRatio) * sai1Pre * sai1Post / ClockConstants::OscMHz};
     const auto num{targetSamplingRate * sai1WordOsc - orderOfMagnitude * pll4Div};
     const auto numInt{static_cast<int32_t>(round(num * (pll4Denom / orderOfMagnitude)))};
 
@@ -509,7 +505,7 @@ uint32_t AudioSystemManager::ClockDividers::getPll4Freq() const
 FLASHMEM
 double AudioSystemManager::ClockDividers::getCurrentSamplingRate() const
 {
-    return ClockConstants::CyclesPerWord * getPLL4FractionalDivider() / (sai1Pre * sai1Post);
+    return ClockConstants::CyclesPerOversample * getPLL4FractionalDivider() / (sai1Pre * sai1Post);
 }
 
 FLASHMEM
@@ -521,7 +517,7 @@ double AudioSystemManager::ClockDividers::getPLL4FractionalDivider() const
 FLASHMEM
 uint32_t AudioSystemManager::ClockDividers::getCurrentMaxPossibleSamplingRate() const
 {
-    const auto result{ClockConstants::CyclesPerWord * (pll4Div + 1) / (sai1Pre * sai1Post)};
+    const auto result{ClockConstants::CyclesPerOversample * (pll4Div + 1) / (sai1Pre * sai1Post)};
     return static_cast<uint32_t>(result);
 }
 
