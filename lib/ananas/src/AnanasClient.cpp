@@ -43,7 +43,7 @@ namespace ananas
                     prevTime = ns;
                 }
 
-                announcer.txPacket.bufferFillPercent = announcer.txPacket.ptpLock ? packetBuffer.getFillPercent() : 50;
+                announcer.txPacket.bufferFillPercent = packetBuffer.getFillPercent();
             } else break;
         }
 
