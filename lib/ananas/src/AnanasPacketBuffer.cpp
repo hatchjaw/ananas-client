@@ -83,7 +83,6 @@ namespace ananas
 
     void PacketBuffer::incrementReadIndex()
     {
-        // Might be better to avoid a division...
         ++readIndex;
         if (readIndex >= Constants::PacketBufferCapacity) {
             readIndex = 0;

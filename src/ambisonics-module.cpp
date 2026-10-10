@@ -7,7 +7,7 @@
 #include <ComponentManager.h>
 #include "audio_processors/DistributedAmbisonicsProcessor.h"
 
-using namespace ananas::Ambisonics;
+using namespace ananas::HOA;
 
 SystemUtils::LogLevel logLevel{SystemUtils::LogLevel::None};
 AudioSystemConfig config{
@@ -89,9 +89,37 @@ void setup()
         ananasClient.setAudioPtpOffsetNs(offset);
     });
 
-    context.moduleID.onChange = [](const int value)
+    // Set up decoder coefficients
+    char path[8];
+    for (size_t i{0}; i < ananas::Constants::NumHOAChannels; ++i) {
+        sprintf(path, "dm/0/%d", i);
+        context.decoderCoefficients.insert(DecoderCoefficientsMap::value_type(
+            path,
+            ananas::ListenableParameter(0.f)
+        ));
+        sprintf(path, "dm/1/%d", i);
+        context.decoderCoefficients.insert(DecoderCoefficientsMap::value_type(
+            path,
+            ananas::ListenableParameter(0.f)
+        ));
+    }
+
+    for (auto &dc: context.decoderCoefficients) {
+        dc.second.onChange = [dc](const float value)
+        {
+            Serial.printf("%s changed: %.9f\n", dc.first.c_str(), value);
+            ambisonics.setParamValue(dc.first, value);
+        };
+    }
+
+    context.decoderRow0.onChange = [](const int value)
     {
-        ambisonics.setParamValue("moduleID", static_cast<float>(value));
+        Serial.printf("decoder row 0 changed: %d\n", value);
+    };
+
+    context.decoderRow1.onChange = [](const int value)
+    {
+        Serial.printf("decoder row 1 changed: %d\n", value);
     };
 
     audioSystemManager.setAudioProcessor(&ambisonicsModule);
@@ -103,5 +131,4 @@ void loop()
     componentManager.run();
 
     ananasClient.setPercentCPU(ambisonicsModule.getCurrentPercentCPU());
-    ananasClient.setModuleID(static_cast<int16_t>(ambisonics.getParamValue("moduleID")));
 }

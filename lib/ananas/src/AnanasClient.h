@@ -5,7 +5,6 @@
 #include "AnanasPacketBuffer.h"
 #include <AudioProcessor.h>
 #include <ProgramComponent.h>
-#include <NetworkProcessor.h>
 #include <Announcer.h>
 #include <Listener.h>
 

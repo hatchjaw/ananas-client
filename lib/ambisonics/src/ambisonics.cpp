@@ -1,9 +1,5 @@
 /* ------------------------------------------------------------
-author: "Pierre Lecomte"
-copyright: "(c) Pierre Lecomte"
-license: "CC-BY-NC-SA-4.0"
-name: "Sampling Ambisonic Decoder"
-version: "1.0"
+name: "Distributed HOA"
 Code generated with Faust 2.84.5 (https://faust.grame.fr)
 Compilation options: -a ananas.cpp -lang cpp -i -fpga-mem-th 4 -ct 1 -dtl 1024 -es 1 -mcd 16 -mdd 1024 -mdy 33 -uim -single -ftz 0
 ------------------------------------------------------------ */
@@ -10869,11 +10865,9 @@ struct dsp_poly_factory : public dsp_factory {
 #define FAUSTFLOAT float
 #endif 
 
-/* link with : "" */
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <math.h>
 
 #ifndef FAUSTCLASS 
 #define FAUSTCLASS mydsp
@@ -10890,72 +10884,42 @@ struct dsp_poly_factory : public dsp_factory {
 #define RESTRICT __restrict__
 #endif
 
-static float mydsp_faustpower2_f(float value) {
-	return value * value;
-}
 
 struct mydsp : public dsp {
 	
-	float fRec2[2];
-	float fRec1[2];
-	int fSampleRate;
-	float fConst0;
-	float fConst1;
-	float fConst2;
-	float fConst3;
-	float fConst4;
-	float fRec4[2];
-	float fConst5;
-	float fConst6;
-	float fConst7;
-	float fConst8;
-	float fConst9;
-	float fConst10;
-	float fConst11;
-	float fConst12;
-	float fConst13;
-	float fConst14;
-	float fRec3[2];
-	float fConst15;
-	float fRec0[2];
-	float fRec7[2];
-	float fRec6[2];
-	float fConst16;
-	float fConst17;
-	float fConst18;
-	float fConst19;
-	float fConst20;
-	float fRec5[2];
-	float fRec9[2];
-	float fConst21;
-	float fConst22;
-	float fConst23;
-	float fConst24;
-	float fRec8[2];
 	FAUSTFLOAT fHslider0;
-	float fRec12[2];
-	float fRec11[2];
-	float fConst25;
-	float fConst26;
-	float fConst27;
-	float fConst28;
-	float fRec14[2];
-	float fConst29;
-	float fConst30;
-	float fRec13[2];
-	float fConst31;
-	float fRec10[2];
-	float fRec17[2];
-	float fRec16[2];
-	float fConst32;
-	float fConst33;
-	float fConst34;
-	float fConst35;
-	float fRec15[2];
-	float fRec19[2];
-	float fConst36;
-	float fConst37;
-	float fRec18[2];
+	FAUSTFLOAT fHslider1;
+	FAUSTFLOAT fHslider2;
+	FAUSTFLOAT fHslider3;
+	FAUSTFLOAT fHslider4;
+	FAUSTFLOAT fHslider5;
+	FAUSTFLOAT fHslider6;
+	FAUSTFLOAT fHslider7;
+	FAUSTFLOAT fHslider8;
+	FAUSTFLOAT fHslider9;
+	FAUSTFLOAT fHslider10;
+	FAUSTFLOAT fHslider11;
+	FAUSTFLOAT fHslider12;
+	FAUSTFLOAT fHslider13;
+	FAUSTFLOAT fHslider14;
+	FAUSTFLOAT fHslider15;
+	FAUSTFLOAT fHslider16;
+	FAUSTFLOAT fHslider17;
+	FAUSTFLOAT fHslider18;
+	FAUSTFLOAT fHslider19;
+	FAUSTFLOAT fHslider20;
+	FAUSTFLOAT fHslider21;
+	FAUSTFLOAT fHslider22;
+	FAUSTFLOAT fHslider23;
+	FAUSTFLOAT fHslider24;
+	FAUSTFLOAT fHslider25;
+	FAUSTFLOAT fHslider26;
+	FAUSTFLOAT fHslider27;
+	FAUSTFLOAT fHslider28;
+	FAUSTFLOAT fHslider29;
+	FAUSTFLOAT fHslider30;
+	FAUSTFLOAT fHslider31;
+	int fSampleRate;
 	
 	mydsp() {
 	}
@@ -10967,42 +10931,10 @@ struct mydsp : public dsp {
 	mydsp& operator=(const mydsp&) = default;
 	
 	void metadata(Meta* m) { 
-		m->declare("author", "Pierre Lecomte");
-		m->declare("basics.lib/name", "Faust Basic Element Library");
-		m->declare("basics.lib/version", "1.22.0");
 		m->declare("compile_options", "-a ananas.cpp -lang cpp -i -fpga-mem-th 4 -ct 1 -dtl 1024 -es 1 -mcd 16 -mdd 1024 -mdy 33 -uim -single -ftz 0");
-		m->declare("copyright", "(c) Pierre Lecomte");
-		m->declare("delays.lib/name", "Faust Delay Library");
-		m->declare("delays.lib/version", "1.2.0");
+		m->declare("description", "Third order HOA for a distributed setup consisting of modules that each handle two output channels.");
 		m->declare("filename", "ambisonics.dsp");
-		m->declare("grids.lib/author", "Pierre Lecomte");
-		m->declare("grids.lib/copyright", "(c) Pierre Lecomte 2020");
-		m->declare("grids.lib/license", "CC-BY-NC-SA-4.0");
-		m->declare("grids.lib/name", "Spherical Grids library");
-		m->declare("grids.lib/version", "1.1");
-		m->declare("license", "CC-BY-NC-SA-4.0");
-		m->declare("maths.lib/author", "GRAME");
-		m->declare("maths.lib/copyright", "GRAME");
-		m->declare("maths.lib/license", "LGPL with exception");
-		m->declare("maths.lib/name", "Faust Math Library");
-		m->declare("maths.lib/version", "2.9.0");
-		m->declare("name", "Sampling Ambisonic Decoder");
-		m->declare("options", "[osc:on]");
-		m->declare("platform.lib/name", "Generic Platform Library");
-		m->declare("platform.lib/version", "1.3.0");
-		m->declare("radial.lib/author", "Pierre Lecomte");
-		m->declare("radial.lib/copyright", "(c) Pierre Lecomte 2018");
-		m->declare("radial.lib/license", "CC-BY-NC-SA-4.0");
-		m->declare("radial.lib/name", "Radial Filters library");
-		m->declare("radial.lib/version", "1.1");
-		m->declare("signals.lib/name", "Faust Signal Routing Library");
-		m->declare("signals.lib/version", "1.6.0");
-		m->declare("version", "1.0");
-		m->declare("ylm.lib/author", "Pierre Lecomte");
-		m->declare("ylm.lib/copyright", "(c) Pierre Lecomte 2017");
-		m->declare("ylm.lib/license", "CC-BY-NC-SA-4.0");
-		m->declare("ylm.lib/name", "Spherical Harmonics library");
-		m->declare("ylm.lib/version", "1.1");
+		m->declare("name", "Distributed HOA");
 	}
 
 	virtual int getNumInputs() {
@@ -11017,111 +10949,44 @@ struct mydsp : public dsp {
 	
 	virtual void instanceConstants(int sample_rate) {
 		fSampleRate = sample_rate;
-		fConst0 = std::min<float>(1.92e+05f, std::max<float>(1.0f, static_cast<float>(fSampleRate)));
-		fConst1 = 239.43661f / fConst0;
-		fConst2 = mydsp_faustpower2_f(fConst1);
-		fConst3 = 25.83773f * fConst2;
-		fConst4 = fConst3 + 1761.207f / fConst0;
-		fConst5 = 1112.0325f / fConst0;
-		fConst6 = tgammaf(5.0f);
-		fConst7 = tgammaf(3.0f);
-		fConst8 = tgammaf(1.5f);
-		fConst9 = fConst8 * std::sqrt(7.0f * (fConst7 / fConst6));
-		fConst10 = 2.3936536f * fConst9;
-		fConst11 = tgammaf(1.0f);
-		fConst12 = tgammaf(3.5f) * std::sqrt(7.0f * (fConst11 / tgammaf(7.0f)));
-		fConst13 = 6.3830767f * fConst12;
-		fConst14 = 1.0f / (556.01624f / fConst0 + 1.0f);
-		fConst15 = 1.0f / (880.6035f / fConst0 + 6.4594326f * fConst2 + 1.0f);
-		fConst16 = 12.0f * fConst2;
-		fConst17 = fConst16 + 1436.6198f / fConst0;
-		fConst18 = tgammaf(2.5f) * std::sqrt(5.0f * (fConst11 / fConst6));
-		fConst19 = 3.1915383f * fConst18;
-		fConst20 = 1.0f / (718.3099f / fConst0 + 3.0f * fConst2 + 1.0f);
-		fConst21 = 478.87323f / fConst0;
-		fConst22 = fConst8 * std::sqrt(3.0f * (fConst11 / fConst7));
-		fConst23 = 1.5957692f * fConst22;
-		fConst24 = 1.0f / (fConst1 + 1.0f);
-		fConst25 = 239.45847f / fConst0;
-		fConst26 = mydsp_faustpower2_f(fConst25);
-		fConst27 = 25.83773f * fConst26;
-		fConst28 = fConst27 + 1761.3678f / fConst0;
-		fConst29 = 1112.1339f / fConst0;
-		fConst30 = 1.0f / (556.06696f / fConst0 + 1.0f);
-		fConst31 = 1.0f / (880.6839f / fConst0 + 6.4594326f * fConst26 + 1.0f);
-		fConst32 = 12.0f * fConst26;
-		fConst33 = fConst32 + 1436.7509f / fConst0;
-		fConst34 = 7.0866387e-16f * fConst18;
-		fConst35 = 1.0f / (718.3754f / fConst0 + 3.0f * fConst26 + 1.0f);
-		fConst36 = 478.91693f / fConst0;
-		fConst37 = 1.0f / (fConst25 + 1.0f);
 	}
 	
 	virtual void instanceResetUserInterface() {
 		fHslider0 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider1 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider2 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider3 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider4 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider5 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider6 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider7 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider8 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider9 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider10 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider11 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider12 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider13 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider14 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider15 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider16 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider17 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider18 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider19 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider20 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider21 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider22 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider23 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider24 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider25 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider26 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider27 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider28 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider29 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider30 = static_cast<FAUSTFLOAT>(0.0f);
+		fHslider31 = static_cast<FAUSTFLOAT>(0.0f);
 	}
 	
 	virtual void instanceClear() {
-		for (int l0 = 0; l0 < 2; l0 = l0 + 1) {
-			fRec2[l0] = 0.0f;
-		}
-		for (int l1 = 0; l1 < 2; l1 = l1 + 1) {
-			fRec1[l1] = 0.0f;
-		}
-		for (int l2 = 0; l2 < 2; l2 = l2 + 1) {
-			fRec4[l2] = 0.0f;
-		}
-		for (int l3 = 0; l3 < 2; l3 = l3 + 1) {
-			fRec3[l3] = 0.0f;
-		}
-		for (int l4 = 0; l4 < 2; l4 = l4 + 1) {
-			fRec0[l4] = 0.0f;
-		}
-		for (int l5 = 0; l5 < 2; l5 = l5 + 1) {
-			fRec7[l5] = 0.0f;
-		}
-		for (int l6 = 0; l6 < 2; l6 = l6 + 1) {
-			fRec6[l6] = 0.0f;
-		}
-		for (int l7 = 0; l7 < 2; l7 = l7 + 1) {
-			fRec5[l7] = 0.0f;
-		}
-		for (int l8 = 0; l8 < 2; l8 = l8 + 1) {
-			fRec9[l8] = 0.0f;
-		}
-		for (int l9 = 0; l9 < 2; l9 = l9 + 1) {
-			fRec8[l9] = 0.0f;
-		}
-		for (int l10 = 0; l10 < 2; l10 = l10 + 1) {
-			fRec12[l10] = 0.0f;
-		}
-		for (int l11 = 0; l11 < 2; l11 = l11 + 1) {
-			fRec11[l11] = 0.0f;
-		}
-		for (int l12 = 0; l12 < 2; l12 = l12 + 1) {
-			fRec14[l12] = 0.0f;
-		}
-		for (int l13 = 0; l13 < 2; l13 = l13 + 1) {
-			fRec13[l13] = 0.0f;
-		}
-		for (int l14 = 0; l14 < 2; l14 = l14 + 1) {
-			fRec10[l14] = 0.0f;
-		}
-		for (int l15 = 0; l15 < 2; l15 = l15 + 1) {
-			fRec17[l15] = 0.0f;
-		}
-		for (int l16 = 0; l16 < 2; l16 = l16 + 1) {
-			fRec16[l16] = 0.0f;
-		}
-		for (int l17 = 0; l17 < 2; l17 = l17 + 1) {
-			fRec15[l17] = 0.0f;
-		}
-		for (int l18 = 0; l18 < 2; l18 = l18 + 1) {
-			fRec19[l18] = 0.0f;
-		}
-		for (int l19 = 0; l19 < 2; l19 = l19 + 1) {
-			fRec18[l19] = 0.0f;
-		}
 	}
 	
 	virtual void init(int sample_rate) {
@@ -11144,11 +11009,39 @@ struct mydsp : public dsp {
 	}
 	
 	virtual void buildUserInterface(UI* ui_interface) {
-		ui_interface->openVerticalBox("Sampling Ambisonic Decoder");
-		ui_interface->declare(&fHslider0, "osc", "/levelout -70 6");
-		ui_interface->declare(&fHslider0, "style", "knob");
-		ui_interface->declare(&fHslider0, "unit", "dB");
-		ui_interface->addHorizontalSlider("Outputs Gain", &fHslider0, FAUSTFLOAT(0.0f), FAUSTFLOAT(-7e+01f), FAUSTFLOAT(6.0f), FAUSTFLOAT(0.1f));
+		ui_interface->openVerticalBox("Distributed HOA");
+		ui_interface->addHorizontalSlider("dm/0/0", &fHslider15, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/1", &fHslider14, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/10", &fHslider5, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/11", &fHslider4, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/12", &fHslider3, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/13", &fHslider2, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/14", &fHslider1, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/15", &fHslider0, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/2", &fHslider13, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/3", &fHslider12, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/4", &fHslider11, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/5", &fHslider10, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/6", &fHslider9, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/7", &fHslider8, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/8", &fHslider7, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/0/9", &fHslider6, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/0", &fHslider31, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/1", &fHslider30, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/10", &fHslider21, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/11", &fHslider20, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/12", &fHslider19, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/13", &fHslider18, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/14", &fHslider17, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/15", &fHslider16, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/2", &fHslider29, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/3", &fHslider28, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/4", &fHslider27, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/5", &fHslider26, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/6", &fHslider25, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/7", &fHslider24, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/8", &fHslider23, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
+		ui_interface->addHorizontalSlider("dm/1/9", &fHslider22, FAUSTFLOAT(0.0f), FAUSTFLOAT(-1e+01f), FAUSTFLOAT(1e+01f), FAUSTFLOAT(1e-08f));
 		ui_interface->closeBox();
 	}
 	
@@ -11171,56 +11064,57 @@ struct mydsp : public dsp {
 		FAUSTFLOAT* input15 = inputs[15];
 		FAUSTFLOAT* output0 = outputs[0];
 		FAUSTFLOAT* output1 = outputs[1];
-		float fSlow0 = 1.3550956f * std::pow(1e+01f, 0.05f * static_cast<float>(fHslider0));
+		float fSlow0 = static_cast<float>(fHslider0);
+		float fSlow1 = static_cast<float>(fHslider1);
+		float fSlow2 = static_cast<float>(fHslider2);
+		float fSlow3 = static_cast<float>(fHslider3);
+		float fSlow4 = static_cast<float>(fHslider4);
+		float fSlow5 = static_cast<float>(fHslider5);
+		float fSlow6 = static_cast<float>(fHslider6);
+		float fSlow7 = static_cast<float>(fHslider7);
+		float fSlow8 = static_cast<float>(fHslider8);
+		float fSlow9 = static_cast<float>(fHslider9);
+		float fSlow10 = static_cast<float>(fHslider10);
+		float fSlow11 = static_cast<float>(fHslider11);
+		float fSlow12 = static_cast<float>(fHslider12);
+		float fSlow13 = static_cast<float>(fHslider13);
+		float fSlow14 = static_cast<float>(fHslider14);
+		float fSlow15 = static_cast<float>(fHslider15);
+		float fSlow16 = static_cast<float>(fHslider16);
+		float fSlow17 = static_cast<float>(fHslider17);
+		float fSlow18 = static_cast<float>(fHslider18);
+		float fSlow19 = static_cast<float>(fHslider19);
+		float fSlow20 = static_cast<float>(fHslider20);
+		float fSlow21 = static_cast<float>(fHslider21);
+		float fSlow22 = static_cast<float>(fHslider22);
+		float fSlow23 = static_cast<float>(fHslider23);
+		float fSlow24 = static_cast<float>(fHslider24);
+		float fSlow25 = static_cast<float>(fHslider25);
+		float fSlow26 = static_cast<float>(fHslider26);
+		float fSlow27 = static_cast<float>(fHslider27);
+		float fSlow28 = static_cast<float>(fHslider28);
+		float fSlow29 = static_cast<float>(fHslider29);
+		float fSlow30 = static_cast<float>(fHslider30);
+		float fSlow31 = static_cast<float>(fHslider31);
 		for (int i0 = 0; i0 < count; i0 = i0 + 1) {
-			fRec2[0] = fRec2[1] + fRec0[1];
-			fRec1[0] = fRec1[1] + fRec2[1];
-			fRec4[0] = fRec4[1] + fRec3[1];
-			float fTemp0 = static_cast<float>(input11[i0]);
-			float fTemp1 = static_cast<float>(input9[i0]);
-			fRec3[0] = -(fConst14 * (fConst13 * fTemp1 + fConst10 * fTemp0 + fConst5 * fRec4[0]));
-			fRec0[0] = fConst15 * (fRec3[0] - (fConst4 * fRec2[0] + fConst3 * fRec1[0]));
-			fRec7[0] = fRec7[1] + fRec5[1];
-			fRec6[0] = fRec6[1] + fRec7[1];
-			float fTemp2 = static_cast<float>(input8[i0]);
-			float fTemp3 = 1.118034f * static_cast<float>(input6[i0]);
-			fRec5[0] = -(fConst20 * (fTemp3 + fConst19 * fTemp2 + fConst17 * fRec7[0] + fConst16 * fRec6[0]));
-			fRec9[0] = fRec9[1] + fRec8[1];
-			float fTemp4 = static_cast<float>(input1[i0]);
-			fRec8[0] = fConst24 * (fConst23 * fTemp4 - fConst21 * fRec9[0]);
-			float fTemp5 = static_cast<float>(input0[i0]);
-			output0[i0] = static_cast<FAUSTFLOAT>(fSlow0 * (0.08095708f * fTemp5 + 0.06970006f * fRec8[0] + 0.04953394f * fRec5[0] + 0.024610434f * fRec0[0]));
-			fRec12[0] = fRec12[1] + fRec10[1];
-			fRec11[0] = fRec11[1] + fRec12[1];
-			fRec14[0] = fRec14[1] + fRec13[1];
-			fRec13[0] = fConst30 * (fConst9 * (1.6925688f * fTemp0 - 1.6925688f * static_cast<float>(input13[i0])) - fConst12 * (4.513517f * fTemp1 + 4.513517f * static_cast<float>(input15[i0])) - fConst29 * fRec14[0]);
-			fRec10[0] = fConst31 * (fRec13[0] - (fConst28 * fRec12[0] + fConst27 * fRec11[0]));
-			fRec17[0] = fRec17[1] + fRec15[1];
-			fRec16[0] = fRec16[1] + fRec17[1];
-			fRec15[0] = fConst35 * (fConst34 * fTemp2 - (fTemp3 + fConst19 * static_cast<float>(input4[i0])) - (fConst33 * fRec17[0] + fConst32 * fRec16[0]));
-			fRec19[0] = fRec19[1] + fRec18[1];
-			fRec18[0] = fConst37 * (fConst22 * (1.1283792f * static_cast<float>(input3[i0]) - 1.1283792f * fTemp4) - fConst36 * fRec19[0]);
-			output1[i0] = static_cast<FAUSTFLOAT>(fSlow0 * (0.080949694f * fTemp5 + 0.0696937f * fRec18[0] + 0.049529422f * fRec15[0] + 0.024608187f * fRec10[0]));
-			fRec2[1] = fRec2[0];
-			fRec1[1] = fRec1[0];
-			fRec4[1] = fRec4[0];
-			fRec3[1] = fRec3[0];
-			fRec0[1] = fRec0[0];
-			fRec7[1] = fRec7[0];
-			fRec6[1] = fRec6[0];
-			fRec5[1] = fRec5[0];
-			fRec9[1] = fRec9[0];
-			fRec8[1] = fRec8[0];
-			fRec12[1] = fRec12[0];
-			fRec11[1] = fRec11[0];
-			fRec14[1] = fRec14[0];
-			fRec13[1] = fRec13[0];
-			fRec10[1] = fRec10[0];
-			fRec17[1] = fRec17[0];
-			fRec16[1] = fRec16[0];
-			fRec15[1] = fRec15[0];
-			fRec19[1] = fRec19[0];
-			fRec18[1] = fRec18[0];
+			float fTemp0 = static_cast<float>(input15[i0]);
+			float fTemp1 = static_cast<float>(input14[i0]);
+			float fTemp2 = static_cast<float>(input13[i0]);
+			float fTemp3 = static_cast<float>(input12[i0]);
+			float fTemp4 = static_cast<float>(input11[i0]);
+			float fTemp5 = static_cast<float>(input10[i0]);
+			float fTemp6 = static_cast<float>(input9[i0]);
+			float fTemp7 = static_cast<float>(input8[i0]);
+			float fTemp8 = static_cast<float>(input7[i0]);
+			float fTemp9 = static_cast<float>(input6[i0]);
+			float fTemp10 = static_cast<float>(input5[i0]);
+			float fTemp11 = static_cast<float>(input4[i0]);
+			float fTemp12 = static_cast<float>(input3[i0]);
+			float fTemp13 = static_cast<float>(input2[i0]);
+			float fTemp14 = static_cast<float>(input1[i0]);
+			float fTemp15 = static_cast<float>(input0[i0]);
+			output0[i0] = static_cast<FAUSTFLOAT>(fSlow15 * fTemp15 + fSlow14 * fTemp14 + fSlow13 * fTemp13 + fSlow12 * fTemp12 + fSlow11 * fTemp11 + fSlow10 * fTemp10 + fSlow9 * fTemp9 + fSlow8 * fTemp8 + fSlow7 * fTemp7 + fSlow6 * fTemp6 + fSlow5 * fTemp5 + fSlow4 * fTemp4 + fSlow3 * fTemp3 + fSlow2 * fTemp2 + fSlow1 * fTemp1 + fSlow0 * fTemp0);
+			output1[i0] = static_cast<FAUSTFLOAT>(fSlow31 * fTemp15 + fSlow30 * fTemp14 + fSlow29 * fTemp13 + fSlow28 * fTemp12 + fSlow27 * fTemp11 + fSlow26 * fTemp10 + fSlow25 * fTemp9 + fSlow24 * fTemp8 + fSlow23 * fTemp7 + fSlow22 * fTemp6 + fSlow21 * fTemp5 + fSlow20 * fTemp4 + fSlow19 * fTemp3 + fSlow18 * fTemp2 + fSlow17 * fTemp1 + fSlow16 * fTemp0);
 		}
 	}
 
@@ -11233,13 +11127,75 @@ struct mydsp : public dsp {
 	#define FAUST_COMPILATION_OPIONS "-a ananas.cpp -lang cpp -i -fpga-mem-th 4 -ct 1 -dtl 1024 -es 1 -mcd 16 -mdd 1024 -mdy 33 -uim -single -ftz 0"
 	#define FAUST_INPUTS 16
 	#define FAUST_OUTPUTS 2
-	#define FAUST_ACTIVES 1
+	#define FAUST_ACTIVES 32
 	#define FAUST_PASSIVES 0
 
-	FAUST_ADDHORIZONTALSLIDER("Outputs Gain", fHslider0, 0.0f, -7e+01f, 6.0f, 0.1f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/0", fHslider15, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/1", fHslider14, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/10", fHslider5, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/11", fHslider4, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/12", fHslider3, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/13", fHslider2, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/14", fHslider1, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/15", fHslider0, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/2", fHslider13, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/3", fHslider12, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/4", fHslider11, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/5", fHslider10, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/6", fHslider9, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/7", fHslider8, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/8", fHslider7, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/0/9", fHslider6, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/0", fHslider31, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/1", fHslider30, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/10", fHslider21, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/11", fHslider20, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/12", fHslider19, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/13", fHslider18, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/14", fHslider17, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/15", fHslider16, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/2", fHslider29, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/3", fHslider28, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/4", fHslider27, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/5", fHslider26, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/6", fHslider25, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/7", fHslider24, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/8", fHslider23, 0.0f, -1e+01f, 1e+01f, 1e-08f);
+	FAUST_ADDHORIZONTALSLIDER("dm/1/9", fHslider22, 0.0f, -1e+01f, 1e+01f, 1e-08f);
 
 	#define FAUST_LIST_ACTIVES(p) \
-		p(HORIZONTALSLIDER, Outputs_Gain, "Outputs Gain", fHslider0, 0.0f, -7e+01f, 6.0f, 0.1f) \
+		p(HORIZONTALSLIDER, dm/0/0, "dm/0/0", fHslider15, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/1, "dm/0/1", fHslider14, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/10, "dm/0/10", fHslider5, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/11, "dm/0/11", fHslider4, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/12, "dm/0/12", fHslider3, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/13, "dm/0/13", fHslider2, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/14, "dm/0/14", fHslider1, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/15, "dm/0/15", fHslider0, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/2, "dm/0/2", fHslider13, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/3, "dm/0/3", fHslider12, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/4, "dm/0/4", fHslider11, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/5, "dm/0/5", fHslider10, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/6, "dm/0/6", fHslider9, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/7, "dm/0/7", fHslider8, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/8, "dm/0/8", fHslider7, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/0/9, "dm/0/9", fHslider6, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/0, "dm/1/0", fHslider31, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/1, "dm/1/1", fHslider30, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/10, "dm/1/10", fHslider21, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/11, "dm/1/11", fHslider20, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/12, "dm/1/12", fHslider19, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/13, "dm/1/13", fHslider18, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/14, "dm/1/14", fHslider17, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/15, "dm/1/15", fHslider16, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/2, "dm/1/2", fHslider29, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/3, "dm/1/3", fHslider28, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/4, "dm/1/4", fHslider27, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/5, "dm/1/5", fHslider26, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/6, "dm/1/6", fHslider25, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/7, "dm/1/7", fHslider24, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/8, "dm/1/8", fHslider23, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
+		p(HORIZONTALSLIDER, dm/1/9, "dm/1/9", fHslider22, 0.0f, -1e+01f, 1e+01f, 1e-08f) \
 
 	#define FAUST_LIST_PASSIVES(p) \
 
@@ -11378,10 +11334,7 @@ float ambisonics::getParamValue(const std::string &path) const
 
 size_t ambisonics::printTo(Print &p) const
 {
-    return p.print("ambisonics:               ") +
-         AudioProcessor::printTo(p) +
-         p.printf("  Module ID: %d\n",
-                  static_cast<int>(fUI->getParamValue("moduleID")));
+    return p.print("ambisonics:               ") + AudioProcessor::printTo(p);
 }
 
 size_t ambisonics::getNumInputs() const

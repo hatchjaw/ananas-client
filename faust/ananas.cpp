@@ -180,13 +180,7 @@ float AudioFaust::getParamValue(const std::string &path) const
 
 size_t AudioFaust::printTo(Print &p) const
 {
-    return p.print("AudioFaust:               ") +
-         AudioProcessor::printTo(p) +
-         p.printf("  Secondary source co-ordinates: (%f, %f), (%f, %f)\n",
-                  fUI->getParamValue("ss/0/x"),
-                  fUI->getParamValue("ss/0/y"),
-                  fUI->getParamValue("ss/1/x"),
-                  fUI->getParamValue("ss/1/y"));
+    return p.print("AudioFaust:               ") + AudioProcessor::printTo(p);
 }
 
 size_t AudioFaust::getNumInputs() const

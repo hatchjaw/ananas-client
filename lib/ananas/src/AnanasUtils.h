@@ -38,6 +38,7 @@ namespace ananas
         static constexpr uint32_t AudioSamplingRate{AUDIO_SAMPLE_RATE_EXACT};
         static constexpr size_t NumOutputChannels{2};
         static constexpr size_t MaxChannels{NUM_INPUT_CHANNELS};
+        static constexpr size_t NumHOAChannels{16};
 
         static constexpr int64_t NanosecondsPerSecond{1'000'000'000};
         static constexpr float NanosecondsPerCpuCycle{10.f / 6.f};
@@ -63,7 +64,7 @@ namespace ananas
         };
 
         inline static const SocketParams AmbisonicsControlSocketParams{
-            {224, 4, 224, 5},
+            {0, 0, 0, 0},
             49165
         };
 

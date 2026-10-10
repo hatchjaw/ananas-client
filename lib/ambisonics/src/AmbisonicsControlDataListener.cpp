@@ -2,10 +2,10 @@
 #include <AnanasUtils.h>
 #include <QNEthernet.h>
 
-namespace ananas::Ambisonics
+namespace ananas::HOA
 {
     ControlDataListener::ControlDataListener(ControlContext &controlContext)
-        : ListenerSocket(Constants::AmbisonicsControlSocketParams),
+        : UnicastListenerSocket(Constants::AmbisonicsControlSocketParams),
           context(controlContext)
     {
     }
@@ -23,13 +23,15 @@ namespace ananas::Ambisonics
             bundleIn.empty();
             bundleIn.fill(rxBuffer, size);
             if (!bundleIn.hasError() && bundleIn.size() > 0) {
-                bundleIn.route("/module", [this](OSCMessage &msg, int addrOffset) { parseModule(msg, addrOffset); });
+                bundleIn.route("/dm", [this](OSCMessage &msg, int addrOffset) { parseCoefficient(msg, addrOffset); });
+                bundleIn.route("/row", [this](OSCMessage &msg, int addrOffset) { parseRow(msg, addrOffset); });
             } else {
                 // Try as message
                 messageIn.empty();
                 messageIn.fill(rxBuffer, size);
                 if (!messageIn.hasError() && messageIn.size() > 0) {
-                    messageIn.route("/module", [this](OSCMessage &msg, int addrOffset) { parseModule(msg, addrOffset); });
+                    messageIn.route("/dm", [this](OSCMessage &msg, int addrOffset) { parseCoefficient(msg, addrOffset); });
+                    messageIn.route("/row", [this](OSCMessage &msg, int addrOffset) { parseRow(msg, addrOffset); });
                 }
             }
         }
@@ -40,18 +42,39 @@ namespace ananas::Ambisonics
         return 0;
     }
 
-    void ControlDataListener::parseModule(OSCMessage &msg, int addrOffset) const
+    void ControlDataListener::parseCoefficient(OSCMessage &msg, int addrOffset) const
     {
-        char ipString[16];
-        IPAddress ip;
-        msg.getString(0, ipString, 16);
-        ip.fromString(ipString);
-        if (ip == qindesign::network::Ethernet.localIP()) {
-            char id[2];
-            msg.getAddress(id, addrOffset + 1);
-            const auto numericID{strtof(id, nullptr)};
-            // Serial.printf("Receiving module ID: %f\n", numericID);
-            context.moduleID = numericID;
+        // Get the decoder matrix row and index within that row, e.g. "dm/0/0"
+        char path[20];
+        msg.getAddress(path, 1);
+        // Get the coefficient value.
+        const auto pos{msg.getFloat(0)};
+        // Serial.printf("Receiving \"%s\": %f\n", path, pos);
+        // Set the parameter.
+        auto it{context.decoderCoefficients.find(path)};
+        if (it != context.decoderCoefficients.end()) {
+            it->second = pos;
+        } else {
+            Serial.printf("%s not found\n", path);
+        }
+    }
+
+    void ControlDataListener::parseRow(OSCMessage &msg, int addrOffset) const
+    {
+        char path[1];
+        msg.getAddress(path, addrOffset + 1);
+        const int idx{path[0] - '0'};
+        const auto row{msg.getInt(0)};
+
+        switch (idx) {
+            case 0:
+                context.decoderRow0 = row;
+                break;
+            case 1:
+                context.decoderRow1 = row;
+                break;
+            default:
+                break;
         }
     }
 }
