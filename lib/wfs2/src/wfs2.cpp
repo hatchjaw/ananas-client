@@ -1,16 +1,50 @@
 /* ------------------------------------------------------------
 name: "Distributed WFS"
 Code generated with Faust 2.84.5 (https://faust.grame.fr)
-Compilation options: -a ananas.cpp -lang cpp -i -fpga-mem-th 4 -ct 1 -dtl 1024 -es 1 -mcd 16 -mdd 1024 -mdy 33 -uim -single -ftz 0
+Compilation options: -a /usr/local/share/faust/teensy/teensy.cpp -lang cpp -i -fpga-mem-th 4 -ct 1 -dtl 1024 -es 1 -mcd 16 -mdd 1024 -mdy 33 -uim -single -ftz 0
 ------------------------------------------------------------ */
 
 #ifndef  __mydsp_H__
 #define  __mydsp_H__
 
-#include "wfs2.h"
-#include <AnanasUtils.h>
+/************************************************************************
+ IMPORTANT NOTE : this file contains two clearly delimited sections :
+ the ARCHITECTURE section (in two parts) and the USER section. Each section
+ is governed by its own copyright and license. Please check individually
+ each section for license and copyright information.
+ *************************************************************************/
+
+/*******************BEGIN ARCHITECTURE SECTION (part 1/2)****************/
+
+/************************************************************************
+ FAUST Architecture File
+ Copyright (C) 2019-2020 GRAME, Centre National de Creation Musicale &
+ Aalborg University (Copenhagen, Denmark)
+ ---------------------------------------------------------------------
+ This Architecture section is free software; you can redistribute it
+ and/or modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 3 of
+ the License, or (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program; If not, see <http://www.gnu.org/licenses/>.
+ 
+ EXCEPTION : As a special exception, you may create a larger work
+ that contains this FAUST architecture section and distribute
+ that work under terms of your choice, so long as this FAUST
+ architecture section is not modified.
+ 
+ ************************************************************************
+ ************************************************************************/
 
 #include <string.h> // for memset
+
+#include "wfs2.h"
 
 // IMPORTANT: in order for MapUI to work, the teensy linker must be g++
 /************************** BEGIN MapUI.h ******************************
@@ -10850,9 +10884,9 @@ struct dsp_poly_factory : public dsp_factory {
 
 /******************************************************************************
  *******************************************************************************
-
+ 
  VECTOR INTRINSICS
-
+ 
  *******************************************************************************
  *******************************************************************************/
 
@@ -11039,7 +11073,7 @@ struct mydsp : public dsp {
 	mydsp& operator=(const mydsp&) = default;
 	
 	void metadata(Meta* m) { 
-		m->declare("compile_options", "-a ananas.cpp -lang cpp -i -fpga-mem-th 4 -ct 1 -dtl 1024 -es 1 -mcd 16 -mdd 1024 -mdy 33 -uim -single -ftz 0");
+		m->declare("compile_options", "-a /usr/local/share/faust/teensy/teensy.cpp -lang cpp -i -fpga-mem-th 4 -ct 1 -dtl 1024 -es 1 -mcd 16 -mdd 1024 -mdy 33 -uim -single -ftz 0");
 		m->declare("delays.lib/name", "Faust Delay Library");
 		m->declare("delays.lib/version", "1.2.0");
 		m->declare("description", "Basic WFS for a distributed setup consisting of modules that each handle two output channels.");
@@ -12316,7 +12350,7 @@ struct mydsp : public dsp {
 	
 	#define FAUST_FILE_NAME "wfs2.dsp"
 	#define FAUST_CLASS_NAME "mydsp"
-	#define FAUST_COMPILATION_OPIONS "-a ananas.cpp -lang cpp -i -fpga-mem-th 4 -ct 1 -dtl 1024 -es 1 -mcd 16 -mdd 1024 -mdy 33 -uim -single -ftz 0"
+	#define FAUST_COMPILATION_OPIONS "-a /usr/local/share/faust/teensy/teensy.cpp -lang cpp -i -fpga-mem-th 4 -ct 1 -dtl 1024 -es 1 -mcd 16 -mdd 1024 -mdy 33 -uim -single -ftz 0"
 	#define FAUST_INPUTS 16
 	#define FAUST_OUTPUTS 2
 	#define FAUST_ACTIVES 36
@@ -12408,12 +12442,16 @@ struct mydsp : public dsp {
 #define MULT_16 32767
 #define DIV_16 0.0000305185
 
+// Not needed
+// unsigned __exidx_start;
+// unsigned __exidx_end;
+
 #if MIDICTRL
 std::list<GUI*> GUI::fGuiList;
 ztimedmap GUI::gTimedZoneMap;
 #endif
 
-wfs2::wfs2()
+wfs2::wfs2() : AudioStream(FAUST_INPUTS, new audio_block_t*[FAUST_INPUTS])
 {
 #ifdef NVOICES
     int nvoices = NVOICES;
@@ -12421,26 +12459,37 @@ wfs2::wfs2()
 #else
     fDSP = new mydsp();
 #endif
-
+    
+    fDSP->init(AUDIO_SAMPLE_RATE_EXACT);
+    
+    fUI = new MapUI();
+    fDSP->buildUserInterface(fUI);
+    
     // allocating Faust inputs
     if (fDSP->getNumInputs() > 0) {
-        fInChannel = new float *[fDSP->getNumInputs()];
+        fInChannel = new float*[fDSP->getNumInputs()];
+        for (int i = 0; i < fDSP->getNumInputs(); i++) {
+            fInChannel[i] = new float[AUDIO_BLOCK_SAMPLES];
+        }
     } else {
-        fInChannel = nullptr;
+        fInChannel = NULL;
     }
-
+    
     // allocating Faust outputs
     if (fDSP->getNumOutputs() > 0) {
-        fOutChannel = new float *[fDSP->getNumOutputs()];
+        fOutChannel = new float*[fDSP->getNumOutputs()];
+        for (int i = 0; i < fDSP->getNumOutputs(); i++) {
+            fOutChannel[i] = new float[AUDIO_BLOCK_SAMPLES];
+        }
     } else {
-        fOutChannel = nullptr;
+        fOutChannel = NULL;
     }
-
-    fUI = new MapUI();
-
+    
 #if MIDICTRL
-    fMIDIHandler = new ananas_midi();
+    fMIDIHandler = new teensy_midi();
     fMIDIInterface = new MidiUI(fMIDIHandler);
+    fDSP->buildUserInterface(fMIDIInterface);
+    fMIDIInterface->run();
 #endif
 }
 
@@ -12462,89 +12511,58 @@ wfs2::~wfs2()
 #endif
 }
 
-void wfs2::prepare(const uint sampleRate)
+template <int INPUTS, int OUTPUTS>
+void wfs2::updateImp(void)
 {
-    fDSP->init(static_cast<int>(sampleRate));
-    fDSP->buildUserInterface(fUI);
-
-////    Serial.println("Setting up channel pointers.");
-//    // Set up channel pointers
-//    for (size_t i{0}; i < ananas::Constants::MaxChannels; ++i) {
-//        fInChannel[i] = fInChannelData[i];
-//    }
-//    for (size_t i{0}; i < ananas::Constants::NumOutputChannels; ++i) {
-//        fOutChannel[i] = fOutChannelData[i];
-//    }
-////    Serial.println("Done setting up channel pointers.");
-
-    // allocating Faust inputs
-    if (fDSP->getNumInputs() > 0) {
-        for (int i = 0; i < fDSP->getNumInputs(); i++) {
-            fInChannel[i] = new float[ananas::Constants::AudioBlockFrames];
-        }
-    }
-
-    // allocating Faust outputs
-    if (fDSP->getNumOutputs() > 0) {
-        for (int i = 0; i < fDSP->getNumOutputs(); i++) {
-            fOutChannel[i] = new float[ananas::Constants::AudioBlockFrames];
-        }
-    }
-
 #if MIDICTRL
-    fDSP->buildUserInterface(fMIDIInterface);
-    fMIDIInterface->run();
+    // Process the MIDI messages received by the Teensy
+    fMIDIHandler->processMidi();
+    // Synchronize all GUI controllers
+    GUI::updateAllGuis();
 #endif
-}
-
-void wfs2::run() {}
-
-void wfs2::beginImpl() {}
-
-void wfs2::processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t numFrames)
-{
-    if (getNumInputs() > 0) {
-        for (size_t channel{0}; channel < getNumInputs(); channel++) {
-            for (size_t i{0}; i < numFrames; i++) {
-                int16_t val = inputBuffer[channel][i];
-                fInChannel[channel][i] = val * DIV_16;
+    
+    if (INPUTS > 0) {
+        audio_block_t* inBlock[INPUTS];
+        for (int channel = 0; channel < INPUTS; channel++) {
+            inBlock[channel] = receiveReadOnly(channel);
+            if (inBlock[channel]) {
+                for (int i = 0; i < AUDIO_BLOCK_SAMPLES; i++) {
+                    int16_t val = inBlock[channel]->data[i];
+                    fInChannel[channel][i] = val*DIV_16;
+                }
+                release(inBlock[channel]);
+            } else {
+                memset(fInChannel[channel], 0, AUDIO_BLOCK_SAMPLES * sizeof(float));
             }
         }
     }
-
-    fDSP->compute(numFrames, fInChannel, fOutChannel);
-
-    for (size_t channel{0}; channel < getNumOutputs(); channel++) {
-        for (size_t i{0}; i < numFrames; i++) {
-            int16_t val = fOutChannel[channel][i] * MULT_16;
-            outputBuffer[channel][i] = val;
+    
+    fDSP->compute(AUDIO_BLOCK_SAMPLES, fInChannel, fOutChannel);
+    
+    audio_block_t* outBlock[OUTPUTS];
+    for (int channel = 0; channel < OUTPUTS; channel++) {
+        outBlock[channel] = allocate();
+        if (outBlock[channel]) {
+            for (int i = 0; i < AUDIO_BLOCK_SAMPLES; i++) {
+                int16_t val = fOutChannel[channel][i]*MULT_16;
+                outBlock[channel]->data[i] = val;
+            }
+            transmit(outBlock[channel], channel);
+            release(outBlock[channel]);
         }
     }
 }
 
-void wfs2::setParamValue(const std::string &path, float value) const
+void wfs2::update(void) { updateImp<FAUST_INPUTS, FAUST_OUTPUTS>(); }
+
+void wfs2::setParamValue(const std::string& path, float value)
 {
     fUI->setParamValue(path, value);
 }
 
-float wfs2::getParamValue(const std::string &path) const
+float wfs2::getParamValue(const std::string& path)
 {
     return fUI->getParamValue(path);
-}
-
-size_t wfs2::printTo(Print &p) const
-{
-    return p.print("wfs2:               ") + AudioProcessor::printTo(p);
-}
-
-size_t wfs2::getNumInputs() const
-{
-    return ananas::Constants::MaxChannels;
-}
-
-size_t wfs2::getNumOutputs() const
-{
-    return ananas::Constants::NumOutputChannels;
 }
 
 /********************END ARCHITECTURE SECTION (part 2/2)****************/

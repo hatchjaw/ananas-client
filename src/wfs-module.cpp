@@ -24,7 +24,7 @@ PTPSubscriber ptpSubscriber{
     Constants::PTPGeneralSocketParams,
     SystemUtils::LogLevel::None
 };
-ananas::AudioClient ananasClient{
+ananas::AudioClient<ananas::WfsClientAnnouncePacket> ananasClient{
     ananas::Constants::AudioSocketParams,
     logLevel
 };

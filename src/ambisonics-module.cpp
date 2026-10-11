@@ -20,7 +20,7 @@ PTPSubscriber ptpSubscriber{
     Constants::PTPGeneralSocketParams,
     SystemUtils::LogLevel::None
 };
-ananas::AudioClient ananasClient{
+ananas::AudioClient<ananas::HoaClientAnnouncePacket> ananasClient{
     ananas::Constants::AudioSocketParams,
     logLevel
 };
@@ -115,11 +115,13 @@ void setup()
     context.decoderRow0.onChange = [](const int value)
     {
         Serial.printf("decoder row 0 changed: %d\n", value);
+        ananasClient.setDecoderMatrixRow0(value);
     };
 
     context.decoderRow1.onChange = [](const int value)
     {
         Serial.printf("decoder row 1 changed: %d\n", value);
+        ananasClient.setDecoderMatrixRow1(value);
     };
 
     audioSystemManager.setAudioProcessor(&ambisonicsModule);
