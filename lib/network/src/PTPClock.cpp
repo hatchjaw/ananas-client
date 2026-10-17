@@ -21,8 +21,8 @@ namespace ananas::network
 
     void PTPClock::beginImpl()
     {
-        pin24SwMuxControlRegister.begin();
         // Set up ENET PPS out on pin 24
+        pin24SwMuxControlRegister.begin();
         if (!pin24SwMuxControlRegister.setMuxMode(Pin24SwMuxControlRegister::MuxMode::ENET_1588_EVENT1_OUT) ||
             !EthernetIEEE1588.setChannelCompareValue(1, ananas::Constants::NanosecondsPerSecond) ||
             !EthernetIEEE1588.setChannelMode(1, EthernetIEEE1588Class::TimerChannelModes::kPulseHighOnCompare) ||

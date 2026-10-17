@@ -1,8 +1,5 @@
 #include "ComponentManager.h"
 
-#include <AnanasUtils.h>
-#include <EthernetManager.h>
-
 ComponentManager::ComponentManager(const std::vector<ProgramComponent *> &components, const SystemUtils::LogLevel logLevel)
     : programComponents(components),
       logging(logLevel)

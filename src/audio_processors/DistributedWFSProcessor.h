@@ -32,7 +32,7 @@ public:
 protected:
     void processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t const numFrames) override
     {
-        // Advance smoothed parameters, i.e. source positions
+        // Advance smoothed parameters, i.e. virtual source positions
         for (auto &sp: context.virtualSourceCoordinates) {
             sp.second.getNext();
         }

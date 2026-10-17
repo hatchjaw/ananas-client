@@ -6,21 +6,14 @@
 
 namespace ananas
 {
-    AudioClient::AudioClient(const SocketParams &p, SystemUtils::LogLevel logLevel)
+    AudioClientBase::AudioClientBase(const SocketParams &p, const SystemUtils::LogLevel logLevel)
         : MulticastListenerSocket(p),
-          announcer(Constants::ClientAnnounceSocketParams),
-          rebootListener(Constants::RebootSocketParams),
-          logging(logLevel)
+          logging(logLevel),
+          rebootListener(Constants::RebootSocketParams)
     {
     }
 
-    void AudioClient::beginImpl()
-    {
-        announcer.txPacket.firmwareVersion = SystemUtils::getFirmwareVersion();
-        announcer.begin();
-    }
-
-    void AudioClient::run()
+    void AudioClientBase::run()
     {
         uint32_t cycles = ARM_DWT_CYCCNT;
 
@@ -42,12 +35,10 @@ namespace ananas
                     }
                     prevTime = ns;
                 }
-
-                announcer.txPacket.bufferFillPercent = packetBuffer.getFillPercent();
             } else break;
         }
 
-        announcer.run();
+        announcerRun();
         rebootListener.run();
 
         cycles = (ARM_DWT_CYCCNT - cycles) >> 6;
@@ -57,74 +48,20 @@ namespace ananas
         }
     }
 
-    void AudioClient::connect()
+    void AudioClientBase::connect()
     {
         MulticastListenerSocket::connect();
-        announcer.connect();
+        announcerConnect();
         rebootListener.connect();
     }
 
-    void AudioClient::prepare(const uint sampleRate)
+    void AudioClientBase::prepare(uint sampleRate)
     {
         this->sampleRate = sampleRate;
         packetBuffer.clear();
     }
 
-    size_t AudioClient::printTo(Print &p) const
-    {
-        return p.print("Ananas Client:     ") + AudioProcessor::printTo(p) +
-               p.printf("  ENET %% CPU: %f (max %f)\n",
-                        CYCLES_TO_APPROX_PERCENT(currEnetCyc),
-                        CYCLES_TO_APPROX_PERCENT(maxEnetCyc)
-               )
-               + (nWrite < Constants::ClientReportThresholdPackets
-                      ? p.printf("  Packets received: %" PRIu32 "\n", nWrite)
-                      : p.printf("  Packets received: %" PRIu32 " Average reception interval: %e ns\n",
-                                 nWrite,
-                                 static_cast<double>(totalTime) / (nWrite - Constants::ClientReportThresholdPackets)))
-               + p.print(packetBuffer)
-               + p.printf("  Packet offset: %" PRId64 " ns (%" PRId32
-                          " frames), Times adjusted: %" PRIu16 "\n",
-                          announcer.txPacket.presentationOffsetNs,
-                          announcer.txPacket.presentationOffsetFrame,
-                          numPacketBufferReadIndexAdjustments);
-    }
-
-    void AudioClient::setFirmwareType(const SystemUtils::FirmwareType firmwareType)
-    {
-        announcer.txPacket.firmwareType = firmwareType;
-    }
-
-    void AudioClient::setReportedSamplingRate(const double samplingRate)
-    {
-        announcer.txPacket.samplingRate = samplingRate;
-    }
-
-    void AudioClient::setIsPtpLocked(const bool ptpLock)
-    {
-        announcer.txPacket.ptpLock = ptpLock;
-    }
-
-    void AudioClient::setAudioPtpOffsetNs(const int32_t offset)
-    {
-        announcer.txPacket.audioPtpOffsetNs = offset;
-        announcer.txPacket.presentationOffsetFrame = (announcer.txPacket.presentationOffsetNs + offset) / static_cast<int64_t>(1e9 / sampleRate);
-    }
-
-    void AudioClient::setPercentCPU(const float percentage)
-    {
-        announcer.txPacket.percentCPU = percentage;
-    }
-
-    void AudioClient::setSecondarySourceCoordinates(const float ss0x, const float ss0y, const float ss1x, const float ss1y)
-    {
-        announcer.txPacket.secondarySource0x = ss0x;
-        announcer.txPacket.secondarySource0y = ss0y;
-        announcer.txPacket.secondarySource1x = ss1x;
-        announcer.txPacket.secondarySource1y = ss1y;
-    }
-
-    void AudioClient::processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t numFrames)
+    void AudioClientBase::processImpl(int16_t **inputBuffer, int16_t **outputBuffer, size_t numFrames)
     {
         if (mute) {
             for (size_t channel{0}; channel < getNumOutputs(); ++channel) {
@@ -148,7 +85,55 @@ namespace ananas
         }
     }
 
-    void AudioClient::adjustBufferReadIndex(const NanoTime ptpNow)
+    //==========================================================================
+
+    AudioClientBase::RebootListener::RebootListener(const SocketParams &p)
+        : MulticastListenerSocket(p)
+    {
+    }
+
+    void AudioClientBase::RebootListener::beginImpl()
+    {
+    }
+
+    void AudioClientBase::RebootListener::run()
+    {
+        if (const auto size{socket.parsePacket()}; size == 0) {
+            Serial.println("Rebooting.");
+            SystemUtils::reboot();
+        }
+    }
+
+    size_t AudioClientBase::RebootListener::printTo(Print &p) const
+    {
+        return 0;
+    }
+
+    //==========================================================================
+
+    template<typename AnnouncePacketType>
+    size_t AudioClient<AnnouncePacketType>::printTo(Print &p) const
+    {
+        return p.print("Ananas Client:     ") + AudioProcessor::printTo(p) +
+               p.printf("  ENET %% CPU: %f (max %f)\n",
+                        CYCLES_TO_APPROX_PERCENT(currEnetCyc),
+                        CYCLES_TO_APPROX_PERCENT(maxEnetCyc)
+               )
+               + (nWrite < Constants::ClientReportThresholdPackets
+                      ? p.printf("  Packets received: %" PRIu32 "\n", nWrite)
+                      : p.printf("  Packets received: %" PRIu32 " Average reception interval: %e ns\n",
+                                 nWrite,
+                                 static_cast<double>(totalTime) / (nWrite - Constants::ClientReportThresholdPackets)))
+               + p.print(packetBuffer)
+               + p.printf("  Packet offset: %" PRId64 " ns (%" PRId32
+                          " frames), Times adjusted: %" PRIu16 "\n",
+                          announcer.txPacket.presentationOffsetNs,
+                          announcer.txPacket.presentationOffsetFrame,
+                          numPacketBufferReadIndexAdjustments);
+    }
+
+    template<typename AnnouncePacketType>
+    void AudioClient<AnnouncePacketType>::adjustBufferReadIndex(const NanoTime ptpNow)
     {
         auto didAdjust{false};
 
@@ -196,27 +181,12 @@ namespace ananas
         announcer.txPacket.presentationOffsetNs = diff;
     }
 
-    //==========================================================================
+    template
+    class AudioClient<ClientAnnouncePacket>;
 
-    AudioClient::RebootListener::RebootListener(const SocketParams &p)
-        : MulticastListenerSocket(p)
-    {
-    }
+    template
+    class AudioClient<WfsClientAnnouncePacket>;
 
-    void AudioClient::RebootListener::beginImpl()
-    {
-    }
-
-    void AudioClient::RebootListener::run()
-    {
-        if (const auto size{socket.parsePacket()}; size == 0) {
-            Serial.println("Rebooting.");
-            SystemUtils::reboot();
-        }
-    }
-
-    size_t AudioClient::RebootListener::printTo(Print &p) const
-    {
-        return 0;
-    }
+    template
+    class AudioClient<HoaClientAnnouncePacket>;
 }

@@ -22,7 +22,7 @@ PTPSubscriber ptpSubscriber{
 ControlContext context;
 VirtualSourceCoordinateListener vsListener{context};
 SecondarySourceCoordinateListener ssListener{context};
-ananas::AudioClientTAL ananasClient{
+ananas::AudioClientTAL<ananas::WfsClientAnnouncePacket> ananasClient{
     ananas::Constants::AudioSocketParams,
     logLevel
 };
