@@ -123,8 +123,6 @@ namespace ananas
     void PacketBuffer::clear()
     {
         readIndex = 0;
-        readIndex = 0;
-        writeIndex = 0;
         writeIndex = 0;
         memset(buffer->data, 0, sizeof(buffer->data));
     }

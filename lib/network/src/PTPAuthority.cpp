@@ -81,7 +81,7 @@ namespace ananas::network
 
         if (sendSync) {
             sendSync = false;
-            auto t1{sendSyncMessage()};
+            const auto t1{sendSyncMessage()};
             sendFollowUpMessage(t1);
             ++syncSequenceID;
         }

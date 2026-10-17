@@ -1,7 +1,7 @@
 #include "AudioProcessor.h"
 #include <AnanasUtils.h>
 
-void AudioProcessor::processAudio(int16_t **inputBuffer, int16_t **outputBuffer, size_t numFrames)
+void AudioProcessor::processAudio(int16_t **inputBuffer, int16_t **outputBuffer, const size_t numFrames)
 {
     uint32_t cycles = ARM_DWT_CYCCNT;
 
