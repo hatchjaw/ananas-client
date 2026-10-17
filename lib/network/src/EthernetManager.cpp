@@ -14,7 +14,7 @@ namespace ananas::network
     {
         NVIC_SET_PRIORITY(IRQ_ENET, SystemUtils::IrqPriority::Priority48);
 
-        qindesign::network::Ethernet.setHostname("t41ptpsubscriber");
+        qindesign::network::Ethernet.setHostname(hostName);
         qindesign::network::Ethernet.macAddress(mac);
         staticIP[2] = mac[4];
         staticIP[3] = mac[5];

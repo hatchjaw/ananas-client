@@ -12534,13 +12534,7 @@ float wfs::getParamValue(const std::string &path) const
 
 size_t wfs::printTo(Print &p) const
 {
-    return p.print("wfs:               ") +
-         AudioProcessor::printTo(p) +
-         p.printf("  Secondary source co-ordinates: (%f, %f), (%f, %f)\n",
-                  fUI->getParamValue("ss/0/x"),
-                  fUI->getParamValue("ss/0/y"),
-                  fUI->getParamValue("ss/1/x"),
-                  fUI->getParamValue("ss/1/y"));
+    return p.print("wfs:               ") + AudioProcessor::printTo(p);
 }
 
 size_t wfs::getNumInputs() const

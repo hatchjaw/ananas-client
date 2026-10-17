@@ -179,7 +179,7 @@ the time authority, is three-pronged:
    i.e. those for which $f_s/N$ takes an integer value.
 3. These two offsets are combined and used to calculate a new sampling rate,
    or, to be more precise, a new value for the `CCM_ANALOG_PLL_AUDIO_NUM`
-   register of the NXP iMXRT1062 SoC, i.e. the numerator to the chip's audio
+   register of the NXP iMXRT1062 MCU, i.e. the numerator to the chip's audio
    phase locked loop (PLL4).
 
 The need for the second prong is not 100% clear, but may be due to the fact that

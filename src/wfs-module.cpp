@@ -24,7 +24,7 @@ PTPSubscriber ptpSubscriber{
     Constants::PTPGeneralSocketParams,
     SystemUtils::LogLevel::None
 };
-ananas::AudioClient ananasClient{
+ananas::AudioClient<ananas::WfsClientAnnouncePacket> ananasClient{
     ananas::Constants::AudioSocketParams,
     logLevel
 };
@@ -96,7 +96,7 @@ void setup()
         ananasClient.setAudioPtpOffsetNs(offset);
     });
 
-    // Set up virtual source positions.
+    // Set up secondary source positions.
     char path[8];
     for (size_t i{0}; i < 2; ++i) {
         sprintf(path, "ss/%d/x", i);
@@ -125,6 +125,7 @@ void setup()
         };
     }
 
+    // Set up virtual source positions.
     for (size_t i{0}; i < ananas::Constants::MaxChannels; ++i) {
         sprintf(path, "vs/%d/x", i);
         context.virtualSourceCoordinates.insert(VirtualSourceCoordinatesMap::value_type(
@@ -150,7 +151,6 @@ void setup()
         vs.second.onChange = [vs](float value)
         {
             // Serial.printf("%s changed: %.9f\n", vs.first.c_str(), value);
-            // value = ananas::Utils::clamp(value, -1.f, 1.f);
             wfs.setParamValue(vs.first, value);
         };
     }

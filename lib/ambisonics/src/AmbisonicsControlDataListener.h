@@ -2,14 +2,13 @@
 #define CONTROLDATALISTENER_H
 
 #include <AnanasClient.h>
-
 #include "AmbisonicsControlContext.h"
 #include <OSCBundle.h>
 #include <ProgramComponent.h>
 
-namespace ananas::Ambisonics
+namespace ananas::HOA
 {
-    class ControlDataListener final : public ListenerSocket,
+    class ControlDataListener final : public UnicastListenerSocket,
                                       public ProgramComponent
     {
     public:
@@ -24,13 +23,11 @@ namespace ananas::Ambisonics
         size_t printTo(Print &p) const override;
 
     private:
-        void parseModule(OSCMessage &msg, int addrOffset) const;
+        void parseCoefficient(OSCMessage &msg, int addrOffset) const;
 
-    private:
-        /**
-        * Max message size is ~44 bytes; leave some headroom.
-        */
-        uint8_t rxBuffer[64]{};
+        void parseRow(OSCMessage &msg, int addrOffset) const;
+
+        uint8_t rxBuffer[MTU]{};
         OSCBundle bundleIn;
         OSCMessage messageIn;
         ControlContext &context;

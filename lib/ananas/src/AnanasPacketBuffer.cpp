@@ -83,7 +83,6 @@ namespace ananas
 
     void PacketBuffer::incrementReadIndex()
     {
-        // Might be better to avoid a division...
         ++readIndex;
         if (readIndex >= Constants::PacketBufferCapacity) {
             readIndex = 0;
@@ -124,8 +123,6 @@ namespace ananas
     void PacketBuffer::clear()
     {
         readIndex = 0;
-        readIndex = 0;
-        writeIndex = 0;
         writeIndex = 0;
         memset(buffer->data, 0, sizeof(buffer->data));
     }

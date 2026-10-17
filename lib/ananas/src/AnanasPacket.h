@@ -42,10 +42,20 @@ namespace ananas
         int32_t audioPtpOffsetNs;
         uint8_t bufferFillPercent;
         bool ptpLock;
+    };
+
+    struct WfsClientAnnouncePacket : ClientAnnouncePacket
+    {
         float secondarySource0x{0.f};
         float secondarySource0y{0.f};
         float secondarySource1x{0.f};
         float secondarySource1y{0.f};
+    };
+
+    struct HoaClientAnnouncePacket : ClientAnnouncePacket
+    {
+        int decoderMatrixRow0{0};
+        int decoderMatrixRow1{0};
     };
 #pragma pack(pop)
 

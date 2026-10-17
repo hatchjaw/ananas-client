@@ -4,7 +4,7 @@
 class AmbisonicsModule final : public AudioProcessor, public ProgramComponent
 {
 public:
-    AmbisonicsModule(AudioProcessor &ananasClient, AudioProcessor &faustAmbi, ananas::Ambisonics::ControlContext &controlContext)
+    AmbisonicsModule(AudioProcessor &ananasClient, AudioProcessor &faustAmbi, ananas::HOA::ControlContext &controlContext)
         : client(ananasClient), ambi(faustAmbi), context(controlContext)
     {
     }
@@ -42,7 +42,7 @@ protected:
 private:
     AudioProcessor &client;
     AudioProcessor &ambi;
-    ananas::Ambisonics::ControlContext &context;
+    ananas::HOA::ControlContext &context;
 };
 
 #endif //DISTRIBUTEDAMBISONICSPROCESSOR_H
